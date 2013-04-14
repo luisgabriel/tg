@@ -1,0 +1,12 @@
+*.aux
+*.log
+*.pdf
+*.bbl
+*.blg
+*.out
+*.toc
+template.lof
+template.lot
+template.tex
+template.toc
+*.directory
