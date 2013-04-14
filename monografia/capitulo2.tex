@@ -1,0 +1,14 @@
+\chapter{Memória Transacional em Software}
+
+Memória Transacional em Software (Software Transactional Memory ou STM) foi proposto primeiramente por Shavit e Touitou em 1995 \cite{shavit1995software}. Porém o conceito de memória transacional já havia sido proposto em 1977 por Lomet \cite{lomet1977process}, onde foi descrito como utilizar as propriedades das transações de banco de dados para coordenar leituras e escritas concorrentes em dados compartilhados na memória de um sistema paralelo.
+
+Em poucas palavras pode-se definir STM como um mecanismo que permite a execução de grupos de operações sobre a memória de maneira atômica \cite{shavit1995software}. ...Completar...
+
+Neste capítulo será explicado os conceitos básicos sobre memória transacional como o que é e como funciona uma transação. Também será apresentado os detalhes sobre os modelos de memória transancional presentes nas duas linguagens funcionais escolhidas para serem analisadas nesse trabalho: Clojure e Haskell.
+
+\section{Transações}
+
+Transação é um conceito oriundo da área de banco de dados e que vem sendo utilizado com sucesso há bastante tempo. Um sistema de gerenciamento de banco de dados (SGBD) é um sistema extremamente concorrente onde vários usuários podem acessar, inserir, remover e atualizar dados armazenados no banco de dados ao mesmo tempo. As transações são os mecanismos providos ao usuário de um SGBD para que este realize uma sequência de operações sem precisar se preocupar com o aspecto concorrente do sistema. 
+
+Elmasri e Navathe \cite{elmasri06db} definem uma transação como "um programa em execução ou processo que inclui um ou mais acessos ao banco de dados, tais como leitura ou atualização dos registros do banco de dados". Uma definição mais interessante é dada por Harris et al. \cite{harris2010transactional} que define uma transação como "uma sequência de ações que parecem indivisíveis e instantâneas para um observador externo". ...complementar...
+

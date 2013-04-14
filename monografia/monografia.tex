@@ -1,0 +1,71 @@
+\documentclass[bsc,oneside]{ufpethesis/ufpethesis}
+
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[hidelinks]{hyperref}
+\usepackage{comment}
+
+\title{Um Estudo Comparativo de Linguagens Funcionais para Implementar Sistemas Concorrentes}
+\author{Luís Gabriel Nunes Ferreira Lima}
+\date{2 de maio de 2013}
+
+\institute{Centro de Informática}
+\program{Graduação em Ciência da Computação}
+\majorfield{Ciência da Computação}
+\adviser{Fernando José Castor de Lima Filho}
+
+\begin{document}
+
+%%
+%% Parte pré-textual
+%%
+\frontmatter
+
+% Folha de rosto
+\frontpage
+
+% apresentação
+\presentationpage
+
+% Dedicatória
+\begin{dedicatory}
+dedicatória
+\end{dedicatory}
+
+% Agradecimentos
+\acknowledgements
+\input{agradecimentos}
+
+% Resumo em Português
+\resumo
+\input{resumo}
+
+% Resumo em Inglês
+% Se preferir, crie um arquivo à parte e o inclua via \include{}
+\abstract
+\input{abstract}
+
+% Sumário
+\tableofcontents
+
+%%
+%% Parte textual
+%%
+\mainmatter
+
+\include {capitulo1}
+\include{capitulo2}
+
+%%
+%% Parte pós-textual
+%%
+\backmatter
+
+% Bibliografia
+\nocite{*}
+\bibliographystyle{IEEEtran}
+\bibliography{bibliografia}
+
+\end{document}
