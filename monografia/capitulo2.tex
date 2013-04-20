@@ -1,14 +1,127 @@
 \chapter{Memória Transacional em Software}
 
-Memória Transacional em Software (Software Transactional Memory ou STM) foi proposto primeiramente por Shavit e Touitou em 1995 \cite{shavit1995software}. Porém o conceito de memória transacional já havia sido proposto em 1977 por Lomet \cite{lomet1977process}, onde foi descrito como utilizar as propriedades das transações de banco de dados para coordenar leituras e escritas concorrentes em dados compartilhados na memória de um sistema paralelo.
+Memória Transacional em Software (\emph{Software Transactional Memory} ou STM) foi proposto primeiramente por Shavit e Touitou em 1995 \cite{shavit1995software}. Porém o conceito de memória transacional já havia sido proposto em 1977 por Lomet \cite{lomet1977process}, onde foi descrito como utilizar as propriedades das transações de banco de dados para coordenar leituras e escritas concorrentes em dados compartilhados na memória.
 
-Em poucas palavras pode-se definir STM como um mecanismo que permite a execução de grupos de operações sobre a memória de maneira atômica \cite{shavit1995software}. ...Completar...
+Em poucas palavras pode-se definir STM como um mecanismo que permite a execução de grupos de operações sobre a memória de maneira atômica \cite{harris2005composable}. Dessa forma, ao invés de proteger os dados compartilhados utilizando \emph{locks}, pode-se explicitamente agrupar as operações que devem acontecer ao "mesmo tempo". Isso elimina muitos dos problemas da sincronização baseada em \emph{locks} como inversão de prioridade, \emph{deadlocks} e a tensão entre concorrência e granularidade \cite{harris2005composable}.
 
-Neste capítulo será explicado os conceitos básicos sobre memória transacional como o que é e como funciona uma transação. Também será apresentado os detalhes sobre os modelos de memória transancional presentes nas duas linguagens funcionais escolhidas para serem analisadas nesse trabalho: Clojure e Haskell.
+No decorrer deste capítulo serão vistos alguns conceitos importantes que fazem parte de um sistema de memória transacional como: transações, blocos atômicos e composição. Também serão abordados algumas das estratégias que podem ser utilizadas para realizar controle de concorrência e versionamento.
 
 \section{Transações}
 
-Transação é um conceito oriundo da área de banco de dados e que vem sendo utilizado com sucesso há bastante tempo. Um sistema de gerenciamento de banco de dados (SGBD) é um sistema extremamente concorrente onde vários usuários podem acessar, inserir, remover e atualizar dados armazenados no banco de dados ao mesmo tempo. As transações são os mecanismos providos ao usuário de um SGBD para que este realize uma sequência de operações sem precisar se preocupar com o aspecto concorrente do sistema. 
+Transação é um conceito oriundo da área de banco de dados e que vem sendo utilizado com sucesso há bastante tempo. Um sistema de gerenciamento de banco de dados (SGBD) é um sistema extremamente concorrente onde vários usuários podem acessar, inserir, remover e atualizar dados armazenados no banco de dados ao mesmo tempo. As transações são os mecanismos providos ao usuário de um SGBD para que este realize uma sequência de operações sem precisar se preocupar com o aspecto concorrente do sistema.
 
-Elmasri e Navathe \cite{elmasri06db} definem uma transação como "um programa em execução ou processo que inclui um ou mais acessos ao banco de dados, tais como leitura ou atualização dos registros do banco de dados". Uma definição mais interessante é dada por Harris et al. \cite{harris2010transactional} que define uma transação como "uma sequência de ações que parecem indivisíveis e instantâneas para um observador externo". ...complementar...
+Elmasri e Navathe \cite{elmasri06db} definem uma transação como "um programa em execução ou processo que inclui um ou mais acessos ao banco de dados, tais como leitura ou atualização dos registros do banco de dados". Uma definição mais interessante é dada por Harris et al. \cite{harris2010transactional}, que define uma transação como "uma sequência de ações que parecem indivisíveis e instantâneas para um observador externo". A partir dessas definições derivam-se quatro propriedades, conhecidas como ACID, que são utilizadas para descrever o comportamento desejado das transações \cite{silberschatz1997database}:
 
+\begin{itemize}
+ \item \emph{Atomicidade} - Ou todas as ações de uma transação acontecem e são efetivadas (\emph{commit}, em inglês) ou, em caso de falha, qualquer ação executada por uma transação parcial será desfeita e a transação será abortada.
+ \item \emph{Consistência} - A transação executada em isolamento preserva a consistência do banco de dados. Por exemplo, se uma quantia de dinheiro será transferido de uma conta A para uma conta B, é necessário que a soma do saldo de A e B se mantenha inalterada.
+ \item \emph{Isolamento} - Uma transação não deve ter acesso à nenhum estado intermediário inconsistente criado por outra transação que está sendo executada concorrentemente.
+ \item \emph{Durabilidade} - Se uma transação foi efetivada, as mudanças feitas no banco de dados devem sobreviver à qualquer falha de sistema.
+\end{itemize}
+
+As transações de um sistema de memória transacional são não-duraveis. A durabilidade não necessária uma vez que os dados manipulados por uma transação não são mantidos após o termino da execução do programa. \cite{harris2010transactional}
+
+
+\section{Bloco atômico}
+
+Um dos conceitos chave de STM é o bloco atômico pois é ele que delimita uma transação. O bloco atômico é uma construção que permite ao programador agrupar operações para serem executadas em isolamento. Normalmente essa ideia é representada nas linguagens de programaçao pela palavra-chave \emph{atomic} seguida de um bloco de escopo que contém o código da transação. Os blocos atômicos também podem ser representado por meio da definição de métodos ou funções atômicas \cite{harris2010transactional}.
+
+\begin{listing}[!h]
+ \begin{minipage}{0.5\textwidth}
+  \centering
+  \begin{minted}{c}
+  atomic {
+    if (x != null)
+      x.bar();
+    
+    y := true;
+  }
+  \end{minted}
+ \end{minipage}
+ \begin{minipage}{0.5\textwidth}
+  \centering
+  \begin{minted}{c}
+  void atomic foo() {
+    if (x != null)
+      x.bar();
+    
+    y := true;
+  }
+  \end{minted}
+ \end{minipage}
+ \caption{Exemplos de blocos atômicos}
+\end{listing}
+
+Existem dois resultados definidos distintos que podem decorrer da execução do código de um bloco atômico (uma transação): Ou toda a transação é concluída com sucesso e as mudanças ficam disponíveis para o restante do programa, ou a transação aborta e mantém o estado do programa inalterado. Um terceiro resultado, indefinido, pode ocorrer quando a transação não termina \cite{helinefficiency}.
+
+Uma transação é abortada quando, durante sua execução, o valor de uma variável compartilhada é alterado antes que essa transação realize \emph{commit}. Quando isso ocorre, o sistema re-executa a transação na expectativa que não ocorra conflito novamente.
+
+
+\section{Componibilidade}
+
+Uma das grandes vantagens dos blocos atômicos é a possibilidade de se combinar uma série de operações atômicas individuais de forma que o resultado continue sendo atômico. Essa possibilidade de compor trechos de código ou funções \emph{thread safe} mantendo o resultado \emph{thread safe} não é fácil de se conseguir quando se utiliza abstrações baseadas em \emph{locks}. Para exemplificar essa propriedade, considere o código a seguir onde o problema da transfênria bancária citado anteriormente está representado em termos de memória transacional:
+
+\begin{listing}
+  \begin{minted}{java}
+class Account {
+  private int balance;
+  
+  public withdraw(int aumont) {
+    this.balance -= aumont;
+  }
+
+  public deposit(int aumont) {
+    this.balance += aumont;
+  }
+
+  public static transfer(Account from, Account to, int aumont) {
+    atomic {
+      from.withdraw(aumont);
+      to.deposit(aumont);
+    }
+  }
+}
+  \end{minted}
+  \caption{Exemplo da transferência bancária com STM}
+\end{listing}
+
+Com uma implementação desse tipo é garantido que ao final da execução do método \emph{transfer} a quantia desejada foi transferida de uma conta para outra sem que nenhuma outra \emph{thread} tivesse acesso ao estado intermediário, onde a quantia foi sacada de uma conta mas ainda não havia sido depositada na outra.
+
+Além do benefício de se poder compor operações para serem executadas de maneira atômicas, como pode-se perceber, o código final é consideravelmente mais simples do que a solução baseada em \emph{locks}, uma vez que os mecanismos de sincronização são implícitos. Outra vantagem é que o código da solução que utiliza memória transacional é bem semelhante à solução sequencial do problema.
+
+
+\section{Controle de Concorrência}
+
+O fato de que uma transação deve ser abortada e re-executada quando acontece um conflito não impõe nenhuma restrição com relação à como e quando o sistema de memória transacional deve detectar o conflito e acionar o abortamento. Esse tipo de decisão é feito pelo controle de concorrência.
+
+Para que os conflitos sejam detectados e resolvidos corretamente um sistema de memória transacional precisa de sincronização para coordenar o acesso concorrente ao dados compartilhados. Essa sincronização é realizada com base em três eventos que podem ocorrer em diferentes momentos, mas não em uma ordem diferente \cite{harris2010transactional}:
+
+\begin{itemize}
+ \item \emph{Ocorrência} - Acontece quando duas transaçõees realizam operações escrita-escrita ou escrita-leitura no mesmo dado compartilhado;
+ \item \emph{Detecção} - Acontece quando o sistema de memória transacional determina que o conflito ocorreu;
+ \item \emph{Resolução} - Acontece quando alguma ação é tomada para evitar o conflito.
+\end{itemize}
+
+Existem duas abordagens clássicas para lidar com o controle de concorrência: a abordagem pessimista e a otimista. Na abordagem pessimista, os eventos de \emph{detecção} e \emph{resolução} acontecem instantaneamente após o evento de \emph{ocorrência}. Já na abordagem otimista, esses eventos ocorrem ao final da transação, antes do \emph{commit}.
+
+À primeira vista a abordagem pessimista parece mais eficiente, já que evita a execução de operações desnecessárias após a detecção do conflito. Porém esse benefício não é tão claro quando se considera um cenário onde mais de duas transações concorrentes entram em conflito. Por exemplo, assuma que duas transações A e B entram em conflito com uma transação C mas não conflitam entre si. Seria suficiente abortar C, entretanto essa detecção não é trivial dado que a transação C não tem conhecimento prévio sobre conflitos entre A e B \cite{spear2006conflict}. Outro problema que envolve a abordagem pessimista é a possibilidade de \emph{deadlocks}, já que para garantir que a \emph{detecção} aconteça logo após a \emph{ocorrência} é necessário que a implementação do controle de concorrência utilize \emph{locks} \cite{harris2010transactional}.
+
+De uma forma geral, se os conflitos são frequentes, o controle de concorrência pessimista tende a ser mais efetivo. Já no caso onde os conflitos são raros, o controle de concorrência otimista é geralmente mais rápido devido ao menor overhead com aquisição de \emph{locks}, e por aumentar a concorrência entre as transações.
+
+
+\section{Estratégias de Atualização e Versionamento}
+
+Um dos problemas que precisam ser levados em consideração quando se está projetando um sistema de memória transacional é como a transação deve atualizar a memória compartilhada. Assim como no controle de concorrência, existem duas estratégias possíveis: atualizações diretas (\emph{direct updates}) e atualizações tardias (\emph{deferred updates}). \cite{herzeel2009reusable}
+
+Em um sistema que realiza atualizações diretas, o versionamento das escritas na memória é feito seguindo o conceito de \emph{eager versioning}. Nesse tipo de sistema a transação modifica diretamente na memória o dado compartilhado e mantém um \emph{undo-log} com os valores que foram sobrescritos. Posteriormente, se a transação for abortada, esse \emph{log} é utilizado para restaurar o conteúdo inicial da memória. Esse tipo de estratégia implica na utilização de um controle de concorrência pessimista, já que, como os valores são escritos diretamente na memória, é necessário garantir a exclusão mútua durante a atualização.
+
+Por outro lado, em um sistema com atualizações tardias utiliza-se o conceito de \emph{lazy versioning}. Nesta estratégia os valores que serão escritos na memória são armazenados em um \emph{redo-log} (privado para cada transação) e as leituras verificam primeiramente esse \emph{log} para garantir o isolamento da transação. Após o término da transação, se não tiver havido conflitos, a transação atualiza a memória compartilhada a partir dos valores do \emph{log}, em caso contrário, a transação é abortada e o \emph{log} é descartado. 
+
+A estratégia de atualização tardia é eficaz quando muitas transações abortam. Como o estado compartilhado se mantém inalterado, não é necessários realizar restauração. Porém, nesse tipo de estratégia é mais trabalhoso efetivar a transação já que a ação de \emph{commit} deve paracer atômica para as demais transações.
+
+
+\section{Outros Aspectos}
+
+Como foi visto durante esse capítulo, as escolhas das estratégias que serão utilizadas em um determinado sistema de memória transacional tem impacto direto em sua performance em diferentes cenários. Além do que foi dito, existem outros pontos que devem ser levados em consideração quando se deseja projetar um sistema de STM. Por exemplo, existe a possibilidade do sistema entrar em \emph{livelock} quando algumas transações não conseguem realizar \emph{commit} devido à conflitos repetidos. Para lidar com esse tipo de problema os sistemas de STM normalmente implementam algum mecanismo de gerenciamento de contenção. \cite{spear2006conflict}
+
+Outro problema que precisa de atenção é como lidar com efeitos colaterais. Para que uma transação consiga ser abortada de maneira correta, é necessário que dentro de uma transação as operações realizadas não contenham nenhum efeito senão leitura e escrita da memória compartilhada \cite{jones2007beautiful}. Operações como escrita em um arquivo ou a impressão de mensagem na tela não podem ser desfeitas e por isso devem ser evitadas.
