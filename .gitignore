@@ -10,3 +10,4 @@ template.lot
 template.tex
 template.toc
 *.directory
+*.backup
