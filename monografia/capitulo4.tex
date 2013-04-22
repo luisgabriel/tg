@@ -1,0 +1,146 @@
+\chapter{Haskell}
+
+Haskell é uma linguagem com fortes raízes acadêmica. Em meados de 1980 haviam diversas linguagens funcionais \emph{lazy} que eram utilizadas como objeto de estudo por diferentes grupos de pesquisa. Haskell foi criada por volta de 1990 pelo esforço dos pesquisadores da área em unificar as pesquisas nesse tipo de paradigma em uma linguagem comum. \cite{o2008real}
+
+Neste capítulo primeiramente será feita uma breve introdução ao conceitos básicos de Haskell e Monads, em seguida será abordado a parte de concorrência, onde será explicado como funcionam as \emph{threads} em Haskell e como se caracteriza o modelo de memória transacional da linguagem.
+
+
+\section{Conceitos básicos}
+
+Para entender como Haskell funciona é preciso ter em mente algumas das características que a tornam bem distinta das demais linguagens de programação. Primeiramente Haskell é uma linguagem puramente funcional, isso quer dizer que a principal unidade de computação da linguagem são funções puras. Uma função pura é uma função que ao ser aplicada à uma dada entrada, retorna um valor, e é garantido que nenhuma operação realizada por essa função tem efeito colateral.
+
+Haskell também é uma linguagem \emph{lazy}. Isso quer dizer que a linguagem utiliza uma estratégia que atrasa a avaliação de uma expressão até que seu valor seja realmente necessário. A linguagem também tem um sistema de tipos estático com inferência de tipos. Essa característica faz com que seja possível que o programador omita as anotações de tipos das funções e expressões sem que o compilador deixe de realizar a validação de tipos do programa em tempo de compilação.
+
+\begin{listing}
+  \begin{minted}[linenos=true]{haskell}
+--  Computes the sum of a finite list of numbers
+sum' :: (Num a) => [a] -> a
+sum' [] = 0
+sum' (x:xs) = x + sum' xs
+  \end{minted}
+  \caption{Função sum' em Haskell}
+  \label{code:sumhs}
+\end{listing}
+
+O Código \ref{code:sumhs} está mostrando um exemplo de uma função escrita em Haskell que computa o somatório de uma lista finita de números. A linha 1 é apenas um comentário, comentários de uma linha sempre começam com \emph{--}. A linha 2 contém a assinatura do tipo da função. Embora não seja necessário, é recomendado se escrever a assinatura de tipos nas funções com o intuito de documentar o código \cite{jones2007practical}. O tipo dessa função indica que a entrada da função é um lista de números e a saída é um número. As linhas 3 e 4 contém o corpo da função e faz uso de casamento de padrões separar o caso base (linha 3) do caso recursivo (linha 4).
+
+
+\section{Monads}
+
+Apesar do fato que qualquer coisa computável pode ser representada por meio funções puras, para que seja possível escrever programas de propósito geral é necessário que uma linguagem tenha suporte à operações com efeito colateral. Monads é um conceito que torna possível a execução de operações com efeito coleteral em linguagens puramente funcionais como Haskell.
+
+Monads pode ser visto como uma maneira de envolver o "mundo". Por exemplo, ao invés de se interpretar uma função \emph{print} como uma função que recebe uma \emph{string} e não retorna nenhum valor, essa função pode ser vista como uma função que retorna um monad que contém duas coisas:
+\begin{itemize}
+  \item Um novo "mundo", que é basicamente o mundo antigo com a avaliação da função \emph{print} aplicada à ele;
+  \item O resultado puro de \emph{print}, que é a string que deve ser impressa na tela.
+\end{itemize}
+
+\begin{listing}
+  \begin{minted}[linenos=true]{haskell}
+printGreeting :: String -> IO ()
+printGreeting name = putStrLn ("Hey " ++ name ++ ", you rock!")
+
+main = do
+    putStrLn "Hello, what's your name?"
+    name <- getLine
+    printGreeting name
+  \end{minted}
+  \caption{Exemplo do monad IO em Haskell}
+  \label{code:monad}
+\end{listing}
+
+O exemplo mais conhecido de monad é o tipo IO. Como é mostrado no Código \ref{code:monad}, a função \emph{printGreeting} recebe uma \emph{string} e retorna algo do tipo \emph{IO ()}. Esse tipo de retorno é análogo ao tipo \emph{void} de algumas linguagens, já que os parenteses vazios representam um tipo que tem apenas um valor que é ele mesmo. Ainda nesse exemplo, a notação \emph{do} é utilizada para agrupar um conjunto de operações monadicas que serão executadas em sequência. Essa notação é bastante conveniente pois  representa bem a natureza imperativa do código de entrada e saída.
+
+Além do conceito de monad resolver um "problema" da linguagem, ele provê uma separação clara entre o código que contém efeitos colaterais do que não tem. Isso é uma característica muito interessante para programação concorrente já que funções puras podem ser facilmente paralelizáveis uma vez que não acessam nem alteram dados compartilhados.
+
+
+\section{Threads}
+
+Existem dois tipos de \emph{threads} em Haskell. Um deles é conhecido como \emph{threads} do SO, que são na verdade abstrações das \emph{threads} nativas do sistema operacional. A utilização mais comum desse tipo de \emph{thread} em aplicações é criando-se tantas \emph{threads} quantos são os números de núcleos da CPU. Utiliza-se a função \emph{forkOS}\footnote{http://www.haskell.org/ghc/docs/latest/html/libraries/base/Control-Concurrent.html\#v:forkOS} para criar esse tipo de \emph{thread}.
+
+O outro tipo de \emph{thread} é conhecido como \emph{threads} de Haskell. São bem mais leves que as \emph{threads} do sistema operacional por necessitarem de menos recursos do sistema \cite{marlow2009runtime}. Cada \emph{thread} de Haskell executa em uma pilha privada de tamanho finito mas compartilha a mesma \emph{heap} com as demais \emph{threads}. Geralmente várias \emph{threads} de Haskell executam em apenas uma \emph{thread} do sistema operacional. Utiliza-se a função \emph{forkIO}\footnote{http://www.haskell.org/ghc/docs/latest/html/libraries/base/Control-Concurrent.html\#v:forkIO} para criar esse tipo de \emph{thread}.
+
+É importante notar que ambos os tipos de \emph{threads} são gerenciadas por um escalonador próprio que faz parte da biblioteca de tempo de execução de Haskell (\emph{Haskell Runtime System} ou RTS). 
+
+\section{Memória Transacional em Haskell}
+
+O primeiro artigo que discute STM em Haskell foi publicado em 2005 por Harris et al \cite{harris2005composable}. Neste artigo é descrito as principais características do sistema de memória transacional de Haskell. Dentre essas características podemos destacar a utilização de controle de concorrência otimista com atualizações tardias e a utilização um \emph{lock} para garantir atomicidade durante a validação de uma transação.
+
+\subsection{Variáveis transacionais}
+
+As variáveis transacionais de Haskell são conhecidas como TVars. A leitura e a escrita de uma TVar são definidas pelas seguintes funções:
+\begin{verbatim}
+readTVar :: TVar a -> STM a
+writeTVar :: TVar a -> a -> STM ()
+\end{verbatim}
+
+Como pode-se observar, o retorno da função \emph{readTVar} é do tipo STM a. Isso indica que a função \emph{readTVar} retorna uma transação (representada pelo monad STM) que quando executada resultará em um valor do tipo \emph{a}. Por conta do sistema de tipos de Haskell, duas características importantes de uma transação derivam dessas assinaturas:
+\begin{itemize}
+  \item Nenhuma ação STM pode ser executada fora de uma transação. Isso acontece porque ambas as funções \emph{readTVar} e \emph{writeTVar} retornam um monad STM.
+  \item Nenhum efeito colateral senão a leitura e escrita em variáveis transacionais pode acontecer dentro de uma transação. Isso acontece porque se uma função chama uma outra função que retorna o tipo IO, por exemplo, ela tem que retornar também o tipo IO. Logo, se fosse possível chamar uma função que retorna um tipo IO dentro de uma transação, essa transação deveria ser do tipo IO e não STM.
+\end{itemize}
+
+Essas duas consequências são muito importantes porque mostram uma característica muito conveninente do sistema de memória transacional de Haskell, o fato do sistema de tipos da linguagem garantir que operações com efeito colateral não podem acontecer dentro de uma transação.
+
+\subsection{Bloco atômico}
+
+O bloco atômico de Haskell é representado pela função \emph{atomically}:
+\begin{verbatim}
+atomically :: STM a -> IO a
+\end{verbatim}
+
+Essa função recebe uma transação, do tipo \emph{STM a}, e retorna uma ação de IO que, quando realizada, executa a transação atomicamente em relação à todas as outras transações  e guarda o valor retornado pela transação.
+
+\subsection{Bloqueio e escolha}
+
+Embora os blocos atômicos garantam a integridade dos dados da memória compartilhada durante a execução de uma transação, eles são bastante inadequados para coordenar programas concorrentes \cite{jones2007beautiful}. O sistema de STM de Haskell provê o operadores de bloqueio e escolha para auxiliar nessa tarefa de coordenação.
+
+É muito comum em programas concorrentes se precisar de bloqueios. Por exemplo, em um \emph{buffer} compartilhado que é utilizado em um modelo produtor-consumidor é necessário bloquear os consumidores que tentam realizar leitura do \emph{buffer} vazio até que novos elementos sejam produzidos. Esse tipo de comportamento pode ser alcançado com a função \emph{retry}:
+\begin{verbatim}
+retry :: STM a
+\end{verbatim}
+
+Para exemplificar a utilização do \emph{retry} considere o Código \ref{code:retry} que contém uma função que bloqueia o produtor se o \emph{buffer} estiver cheio. O \emph{retry}, quando executado, faz a transação em questão ser abortada e em algum momento re-executada. A implementação de Haskell também garante que a re-execução dessa transação só irá acontecer quando o valor de alguma das variáveis transacionais que estão sendo lidas na transação mudar \cite{harris2005composable}. Isso permite que se evite re-execuções desnecessárias.
+
+\begin{listing}
+  \begin{minted}{haskell}
+writeBuffer :: Buffer a -> a -> STM ()
+writeBuffer buffer value = do
+    if (isFull buffer)
+    then retry
+    else (append buffer value)
+  \end{minted}
+  \caption{Exemplo do uso do retry em Haskell}
+  \label{code:retry}
+\end{listing}
+
+Já o operador de escolha é representado pela função \emph{orElse}:
+\begin{verbatim}
+orElse :: STM a -> STM a -> STM a
+\end{verbatim}
+
+Essa função recebe duas transações como parâmetro e permite ao usuário escolher uma ação alternativa caso sua ação principal falhe. A ideia é que uma chamada como \emph{(orElse t1 t2)} irá primeiro executar \emph{t1}, se \emph{t1} em algum momento chamar \emph{retry}, \emph{t2} irá ser executada; se \emph{t2} também chamar \emph{retry}, toda ação será re-executada.
+
+
+\subsection{Implementação da transação bancária}
+
+O Código \ref{code:bankhs} é uma possível implementação para o problema da transação bancária. Nas linhas 1 e 6 estão representadas, respectivamente as funções de saque e depósito. Note que o retorno de ambas as funções é um tipo STM. Isso garante que as duas funções só podem ser chamadas dentro de uma transação. A função \emph{transfer} executa o depósito seguido do saque atomicamente por meio da função \emph{atomically}.
+
+\begin{listing}
+  \begin{minted}[linenos=true]{haskell}
+withdraw :: Account -> Int -> STM ()
+withdraw acc amount = do
+    balance <- readTVar acc
+    writeTVar acc (balance - amount)
+
+deposit :: Account -> Int -> STM ()
+deposit acc amount = withdraw acc (- amount)
+
+transfer :: Account -> Account -> Int -> IO ()
+transfer from to amount = atomically $ do
+    deposit to amount
+    withdraw from amount
+  \end{minted}
+  \caption{Exemplo da transação bancária em Haskell}
+  \label{code:bankhs}
+\end{listing}
