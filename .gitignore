@@ -11,3 +11,4 @@ template.tex
 template.toc
 *.directory
 *.backup
+bin/
