@@ -1,6 +1,6 @@
 *.aux
 *.log
-*.pdf
+monografia.pdf
 *.bbl
 *.blg
 *.out
@@ -12,3 +12,5 @@ template.toc
 *.directory
 *.backup
 bin/
+*~
+*.dvi
