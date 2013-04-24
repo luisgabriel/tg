@@ -1104,15 +1104,15 @@ grau de \@degree\ em \@majorfield.}
 
 \def\section{%
   \@startsection{section}{1}{0mm}{1.5\baselineskip}
-    {\baselineskip}{\centering\large\bfseries}}
+    {\baselineskip}{\large\bfseries}}
 
 \def\subsection{%
   \@startsection{subsection}{2}{0mm}{1.2\baselineskip}
-    {.6\baselineskip}{\centering\bfseries}}
+    {.6\baselineskip}{\bfseries}}
 
 \def\subsubsection{%
   \@startsection{subsubsection}{3}{0mm}{\baselineskip}
-   {.6\baselineskip}{\centering\normalfont}}
+   {.6\baselineskip}{\normalfont}}
 
 \def\paragraph{%
   \@startsection{paragraph}{4}{0mm}{\baselineskip}
