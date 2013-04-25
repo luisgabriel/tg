@@ -13,7 +13,7 @@ O código Clojure é processado em três fases: tempo de leitura, tempo de compi
 
 Cada operação em Clojure é representada por uma função, um macro ou uma forma especial. Uma função é executada em tempo de execução e consiste em uma unidade de computação que recebe uma entrada e produz uma saída. Um macro é uma construção bastante similar à uma função, mas que é expandido em código Clojure em tempo de compilação. Um macro pode ser visto como uma maneira programática de se extender o compilador da linguagem. Já uma forma especial é uma operação reconhecida pelo compilador mas que não é implementada em Clojure.
 
-Outra observação importante é que embora Clojure não seja uma linguagem \emph{lazy}, faz forte uso de \emph{lazy evaluation} em suas estruturas de dados. Todas as funções que operam sobre sequências (listas, strings, streams, árvores XML, etc) retornam sequências \emph{lazy}.
+Outra observação importante é que embora Clojure não seja uma linguagem \emph{lazy}, faz forte uso de \emph{lazy evaluation} em suas estruturas de dados. Todas as funções que operam sobre sequências (listas, \emph{strings}, \emph{streams}, árvores XML, etc) retornam sequências \emph{lazy}.
 
 \begin{listing}
   \begin{minted}[linenos=true]{clojure}
@@ -28,7 +28,7 @@ Outra observação importante é que embora Clojure não seja uma linguagem \emp
   \label{code:sumclj}
 \end{listing}
 
-O Código \ref{code:sumclj} contém uma função em Clojure que computa o somatório de uma lista de números. A linha 1 é um comentário, comentários em Clojure começam com o caracter \emph{;}. As demais linhas são a função em si. O início da função está na linha 2 onde utiliza-se o macro \emph{defn} para definir a função. Esse macro recebe um nome que é o identificador da função (no caso dessa função \emph{sum’}), uma lista de argumentos (\emph{[numbers]}) e corpo da função (linhas 3 a 6). O algoritmo recursivo do somatórios está expresso e termos da forma especial \emph{loop}. A escrita dessa forma especial é semelhante à uma recursão mas é traduzida internamente para um laço para evitar o consumo de muito espaço na pilha. Esse tipo de mecanismo é necessário pelo fato da JVM não suportar \emph{tail call optimization}.
+Como exemplo, o Código \ref{code:sumclj} contém uma função em Clojure que computa o somatório de uma lista de números. A linha 1 é um comentário, comentários em Clojure começam com o caracter \verb|;|. As demais linhas são a função em si. O início da função está na linha 2 onde utiliza-se o macro \verb|defn| para definir a função. Esse macro recebe um nome que é o identificador da função (no caso dessa função \verb|sum’|), uma lista de argumentos (\verb|[numbers]|) e corpo da função (linhas 3 a 6). O algoritmo recursivo do somatórios está expresso e termos da forma especial \verb|loop|. A escrita dessa forma especial é semelhante à uma recursão mas é traduzida internamente para um laço para evitar o consumo de muito espaço na pilha. Esse tipo de mecanismo é necessário pelo fato da JVM não suportar \emph{tail call optimization}.
 
 
 \section{Interoperabilidade com Java}
@@ -66,9 +66,9 @@ A função presente no Código \ref{code:javainterop} exemplifica as formas esqu
 
 \section{Threads}
 
-Todas as bibliotecas disponíveis em java para manipulação de \emph{threads} (\emph{Thread}, \emph{ThreadPool}, \emph{Executor}, etc) podem ser utilizadas em Clojure. Além dessas a linguagem define algumas construções que abstraem a criação e o gerenciamento explicito de \emph{threads}, entre eles o \emph{future} e os agentes.
+Todas as bibliotecas disponíveis em Java para manipulação de \emph{threads} (\verb|Thread|, \verb|ThreadPool|, \verb|Executor|, etc) podem ser utilizadas em Clojure. Além dessas a linguagem define algumas construções que abstraem a criação e o gerenciamento explicito de \emph{threads}, entre eles o \verb|future| e os agentes.
 
-O \emph{future} é um macro que executa um corpo com um conjunto de expressões em um dos \emph{thread pools} (\emph{CachedThreadPool}) gerenciados pela biblioteca de tempo de execução da linguagem. Ele é útil para execução de tarefas demoradas nos quais não se precisa do resultado imediatamente. O resultado da tarefa é acessado deferenciando-se o objeto retornado pelo macro. Se a tarefa ainda estiver em execução no momento da deferenciação, a chamada irá bloquear até que a tarefa termine.
+O \verb|future| é um macro que executa um corpo com um conjunto de expressões em um dos \emph{thread pools} (\verb|CachedThreadPool|) gerenciados pela biblioteca de tempo de execução da linguagem. Ele é útil para execução de tarefas demoradas nos quais não se precisa do resultado imediatamente. O resultado da tarefa é acessado deferenciando-se o objeto retornado pelo macro. Se a tarefa ainda estiver em execução no momento da deferenciação, a chamada irá bloquear até que a tarefa termine.
 
 \begin{listing}
   \begin{minted}{clojure}
@@ -80,7 +80,7 @@ O \emph{future} é um macro que executa um corpo com um conjunto de expressões 
   \caption{Exemplo da utilização future em Clojure}
 \end{listing}
 
-Um agente é uma variável que pode ter seu estado alterado por uma ação que é executada assincronamente. Uma ação é uma função que recebe como parâmetro o estado atual do agente e outros parâmetros opcionais, e retorna o novo estado do agente. É garantido que para um dado agente apenas uma ação será executada por vez.
+Um agente, representado na linguagem pela função \verb|agent|, é uma variável que pode ter seu estado alterado por uma ação que é executada assincronamente. Uma ação é uma função que recebe como parâmetro o estado atual do agente e outros parâmetros opcionais, e retorna o novo estado do agente. Após a execução de uma ação, o novo valor armazenado pelo agente será o valor retornado por essa ação. É garantido que, para um dado agente, apenas uma ação será executada por vez.
 
 \begin{listing}
   \begin{minted}{clojure}
@@ -92,7 +92,7 @@ Um agente é uma variável que pode ter seu estado alterado por uma ação que �
   \caption{Exemplo da utilização agentes em Clojure}
 \end{listing}
 
-Para enviar ações para os agentes utiliza-se as funções \emph{send} e \emph{send-off}. Como a ação é executada de forma assíncrona, ambas as funções retornam imediatamente. A função \emph{send} deve ser utilizada para enviar ações que fazem uso intensivo de CPU, enquanto a função \emph{send-off} deve ser utilizada para ações que fazem mais operações de entrada e saída. Intermanente, o sistema de agentes também é gerenciado \emph{threads pools} específicos.
+Para enviar ações para os agentes utiliza-se as funções \verb|send| e \verb|send-off|. Como a ação é executada de forma assíncrona, ambas as funções retornam imediatamente. A função \verb|send| deve ser utilizada para enviar ações que fazem uso intensivo de CPU, enquanto a função \verb|send-off| deve ser utilizada para ações que fazem mais operações de entrada e saída. Intermanente, o sistema de agentes também é gerenciado por \emph{threads pools} específicos.
 
 
 \section{Memória Transacional em Clojure}
@@ -106,38 +106,44 @@ Diferente de outras implementações de memória transacional o modelo de Clojur
 
 O MVCC mantém multiplas versões dos dados referenciados em uma transação. Dessa forma cada transação só tem acesso a um \emph{snapshot} dos dados referenciados por ela que é criado no início dessa transação \cite{swinnerton2012clojure}. Quando uma transação termina, ela só realizará \emph{commit} se os valores atualizados pela transação não tiverem sido mudados por outras transações. 
 
-Existe um problema relacionado à utilização de \emph{snapshot isolation} que se refere à restrições sobre um conjunto de dados. Imagine que uma mesma pessoa pode ter duas contas em um mesmo banco porém apenas uma dessas contas pode estar com saldo devedor. Considere duas contas T1 e T2 pertencentes a uma mesma pessoa, onde ambas tem saldo 100 reais. Se o usuário executar duas transações concorrentes onde cada uma saca 200 reais de uma das contas, é possível que T1 e T2 fiquem com saldo negativo pois, ao final das duas transações, a restrição se manterá válida uma vez que no snapshot de cada transação uma conta terá saldo negativo e a outra positivo. \cite{wiki2013snapshot} Essa anomalia é chamada de \emph{write skew}.
+Existe um problema relacionado à utilização de \emph{snapshot isolation} que se refere à restrições sobre um conjunto de dados. Imagine que uma mesma pessoa pode ter duas contas em um mesmo banco porém apenas uma dessas contas pode estar com saldo devedor. Considere duas contas T1 e T2 pertencentes a uma mesma pessoa, onde ambas tem saldo 100 reais. Se o usuário executar duas transações concorrentes onde cada uma saca 200 reais de uma das contas, é possível que T1 e T2 fiquem com saldo negativo pois, ao final das duas transações, a restrição se manterá válida uma vez que no \emph{snapshot} de cada transação uma conta terá saldo negativo e a outra positivo. \cite{wiki2013snapshot} Essa anomalia é chamada de \emph{write skew}.
 
-Uma das formas de se evitar esse problema é utilizando a função \emph{ensure}\footnote{http://clojure.github.io/clojure/clojure.core-api.html\#clojure.core/ensure}. Essa função basicamente impede que outras transações atualizem o valor de uma variável transacional antes que a transação atual termine.
+Uma das formas de se evitar esse problema é utilizando a função \verb|ensure|\footnote{http://clojure.github.io/clojure/clojure.core-api.html\#clojure.core/ensure}. Essa função basicamente impede que outras transações atualizem o valor de uma variável transacional antes que a transação atual termine.
 
 
 \subsection{Variáveis transacionais}
 
-As variáveis transacionais em Clojure são conhecidas como \emph{refs} e só podem ser alteradas dentro de uma transação. As principais funções que permitem alterar o valor de uma variável transacional são: \emph{ref-set} e \emph{alter}. Já a leitura é feita deferenciando-se o \emph{ref} (\emph{@nome-do-ref}) e pode ser realizado em qualquer lugar do programa, não somente dentro de transações.
+As variáveis transacionais em Clojure são conhecidas como \verb|ref|s e só podem ser alteradas dentro de uma transação. As principais funções que permitem alterar o valor de uma variável transacional são: \verb|ref-set| e \verb|alter|. Já a leitura é feita deferenciando-se o \verb|ref| (\verb|@nome-do-ref|) e pode ser realizado em qualquer lugar do programa, não somente dentro de transações.
 
-Das funções que alteram o valor de um \emph{ref}, a mais simples é \emph{ref-set}. Ela recebe uma \emph{ref} e um valor como parâmetro e atualiza o estado da variável para o valor que foi passado. Já a função \emph{alter} funciona de forma semelhante ao \emph{send} e o \emph{send-off} dos agentes. Ela recebe como parâmetro o \emph{ref} e uma função que será utilizada para atualizar o valor do \emph{ref} baseado no estado atual, e, após executar, retorna o valor atual do \emph{ref}. 
+Das funções que alteram o valor de um \verb|ref|, a mais simples é \verb|ref-set|. Ela recebe um \verb|ref| e um valor como parâmetros e atualiza o estado da variável para o valor que foi passado. Já a função \verb|alter| funciona de forma semelhante ao \verb|send| e o \verb|send-off| dos agentes. Ela recebe como parâmetro o \verb|ref| e uma função que será utilizada para atualizar o valor do \verb|ref| baseado no estado atual, e, após executar, retorna o valor atual da variável. 
 
 \subsection{Blocos atômicos}
 
-O bloco atômico de Clojure é representado pelo macro \emph{dosync}. Ele recebe como parâmetro um conjunto de expressões, as executa em isolamento e retorna o valor da última expressão.
+O bloco atômico de Clojure é representado pelo macro \verb|dosync|. Ele recebe como parâmetro um conjunto de expressões, as executa em isolamento e retorna o valor da última expressão.
 
-Uma característica importante das transações de Clojure é que embora seja explicatamente recomendado evitar a utilização de operações que causam efeito colateral dentro de uma transação, isso pode ser feito a não ser que o macro \emph{io!}\footnote{http://clojure.github.io/clojure/clojure.core-api.html\#clojure.core/io!} seja utilizado.
+Uma característica importante das transações de Clojure é que embora seja explicatamente recomendado evitar a utilização de operações que causam efeito colateral dentro de uma transação, isso pode ser feito. A maneira de evitar que isso aconteça é através do macro \verb|io!|\footnote{http://clojure.github.io/clojure/clojure.core-api.html\#clojure.core/io!}.
 
 \subsection{Implementação da transação bancária}
 
-O Código \ref{code:bankclj} é uma possível implementação para o problema da transação bancária. Nas linhas 1 e 2 constam a declaração dos \emph{ref}s que são utilizados para representar as contas. A função \emph{transfer} está definida nas linha 4-7. A transferência é definida por uma transação que debita a quantia de uma conta (linha 6) e credita na outra (linha 7) utilizando a função \emph{alter}. A linha 9 mostra a chamada da função \emph{transfer}.
+O Código \ref{code:bankclj} é uma possível implementação em Clojure para o problema da transação bancária descrito anteriormente. Nas linhas 1 e 2 constam a declaração dos \verb|ref|s que são utilizados para representar as contas. A função de saque e depósito estão definidas nas linhas 4 e 7, respectivamente. Ambas adicionam ou removem uma quantia da conta utilizando a função \verb|alter|. Na linha 10 está definida a função que realiza a transferência entre as contas. Utiliza-se o macro \verb|dosync| para delimitar a transação. É importante notar que as funções \verb|withdraw| e \verb|deposit| só podem ser chamadas dentro de uma transação. Caso elas sejam chamadas fora de um bloco \verb|dosync| acontecerá um erro em tempo de execução. A linha 15 exemplifica a utilização da função \verb|transfer|, onde está sendo transferido o valor 10 entre as duas contas em questão.
 
 \begin{listing}
   \begin{minted}[linenos=true]{clojure}
 (def account1 (ref 100))
 (def account2 (ref 0))
 
+(defn withdraw [account amount]
+  (alter account - amount))
+
+(defn deposit [account amount]
+  (alter account + amount))
+
 (defn transfer [from to amount]
   (dosync 
-    (alter from - amount)
-    (alter to + amount)))
+    (withdraw from amount)
+    (deposit to amount)))
 
-(transfer account1 account2 10))
+(transfer account1 account2 10)
   \end{minted}
   \caption{Transação bancária em Clojure}
   \label{code:bankclj}
