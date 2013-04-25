@@ -2,10 +2,9 @@
 
 \newcommand{\bigO}[1]{\ensuremath{\operatorname{O}\bigl(#1\bigr)}}
 
-Para entender melhor quais são as diferenças na prática entre os modelos de STM de Clojure e Haskell, foi escolhido como objeto de estudo a implementação de um software não trivial em ambas as linguagens. Trata-se de um motor de busca paralelo para arquivos textuais. Esse problema foi extraído do trabalho de Pankratius e Adi-Tabatabai \cite{pankratius2011study} onde ele é utilizado em um experimento envolvendo estudantes de pós-graduação onde uma parte desses estudantes é selecionada para implementar o problema utilizando \emph{locks} e a outra parte utilizando memória transacional, ambos com a linguagem C++.
+Para entender melhor quais são as diferenças na prática entre os modelos de STM de Clojure e Haskell, foi escolhido como objeto de estudo a implementação de um software não trivial em ambas as linguagens. Trata-se de um motor de busca paralelo para arquivos textuais. Esse problema foi extraído do trabalho de Pankratius e Adi-Tabatabai \cite{pankratius2011study} onde ele é utilizado para comparar a utilização de sincronização baseada em \emph{locks} com a utilização de memória transacional. Nesse experimento, um grupo de alunos de pós-graduação foi dividido em duplas, onde parte das duplas teve que desenvolver o motor de busca utilizando \emph{locks} e outra parte utilizando memória transacional, ambos com a linguagem C++. O experimento durou um total de 14 semanas, sendo 4 semanas de treinamento em programação paralela e 10 semanas para desenvolvimento. Também foi permitido aos grupos a utilização de qualquer estrutura de dados e qualquer biblioteca de código aberto disponível na internet com o objetivo de simular um ambiente industrial real.
 
 Na primeira parte deste capítulo o problema será especificado. Em seguida será descrito em detalhes como a solução do problema foi modelada e implementada nas duas linguagens. E por fim, será levantado as principais diferenças entre as duas implementações.
-
 
 \section{Especificação}
 
@@ -21,7 +20,7 @@ O motor de busca deve atender aos seguintes requisitos: \cite{pankratius2011stud
   \item Consultas com exclusão de palavras (exemplo, "-fruit").
 \end{compactenum}
 
-\textbf{Saída}. A saída padrão do programa consiste na quantidade total de arquivos que os critérios de busca são verdadeiros, o tempo de consulta e a listagem dos nomes dos 50 primeiros arquivos ordenados segundos os seguintes critérios:
+\textbf{Saída}. A saída padrão do programa consiste na quantidade total de arquivos que os critérios de busca são verdadeiros, o tempo de consulta e a listagem dos nomes dos 50 primeiros arquivos ordenados segundo os seguintes critérios:
 \begin{compactenum}
   \item Decrescentemente pela quantidade de ocorrências de todos os critérios consultados;
   \item Lexicograficamente pelo nome do arquivo.
@@ -29,16 +28,13 @@ O motor de busca deve atender aos seguintes requisitos: \cite{pankratius2011stud
 
 Pode-se assumir que durante a execução do programa nenhum arquivo envolvido na busca será alterado nem outros arquivos serão adicionados ou removidos aos diretórios envolvidos na busca.
 
-No experimento realizado por Pankratius e Adi-Tabatabai, os alunos foram divididos em duplas, e cada dupla teve um período de 10 semanas para o desenvolvimento do projeto. Antes desse período, todos os alunos receberam um treinamento de 4 semanas em programação paralela. Também foi permitido aos grupos a utilização de qualquer estrutura de dados e qualquer biblioteca de código aberto disponível na internet com o objetivo de simular um ambiente industrial real.
-
-
 \section{Versão sequencial}
 
 Inicialmente foi necessário implementar uma versão sequencial do problema proposto para entender melhor o domínio o qual o problema faz parte e também para refletir sobre as estruturas de dados que poderiam ser utilizadas. Essa primeira versão foi escrita em Haskell. Também foi implementada uma tradução dessa versão, em Clojure, com propósito de aprender a linguagem, já que o autor ainda não tinha tido contato com essa linguagem nem com nenhum outro dialeto de Lisp.
 
 \subsection{Índice}
 
-O primeiro passo do desenvolvimento foi decidir qual estrutura de dados seria utilizada para armazenar o índice de palavras. O principal objetivo do índice é prover uma estrutura que associe cada termo presente na base de documentos (o vocabulário) à suas ocorrências nos documentos indexados. A figura X uma representação gráfica simplificada de um índice.
+O primeiro passo do desenvolvimento foi decidir qual estrutura de dados seria utilizada para armazenar o índice de palavras. O principal objetivo do índice é prover uma estrutura que associe cada termo presente na base de documentos (o vocabulário) à suas ocorrências nos documentos indexados.
 
 Para esse trabalho foi escolhida uma estrutura bastante utilizada em recuperação de documentos chamada de índices invertidos. Esse tipo de estrutura associa cada palavra  do vocabulário à uma lista de documentos nos quais essa palavra está presente. Existem dois tipos de índices invertidos: os índices invertidos à nível de registro e os índices invertidos à nível de palavra \cite{baeza1999modern}. A diferença entre eles é que o primeiro armazena apenas informação sobre quais documentos a palavra pertence, enquanto o segundo guarda também outras informações como as posições que a palavra ocorre nos documentos. Para realizar as consultas especificadas pelo problema foi necessário utilizar índices invertidos à nível de palavra.
 
@@ -70,11 +66,11 @@ A versão sequencial foi dividida em 5 módulos: \emph{Scanner}, \emph{Lexer}, \
 
 \textbf{Lexer}. É responsável por processar o texto lido de um documento. Primeiramente acontece o pré-processamento do texto, que é recebido como uma \verb|string| única, para remover caracteres não-alfanuméricos, uniformizar a capitalização e quebrar a \verb|string| de entrada em uma lista de strings onde cada uma representa uma palavra. Em seguida, transforma essa lista de palavras em um mapa onde cada palavra é associada a um conjunto de números que representam as posições que essa palavra aparece no documento. Essa estrutura é chamada de lista de ocorrências.
 
-\textbf{Index}. É responsável por abstrair o acesso ao índice. Neste módulo existem funções para criar um índice, inserir um documento (uma lista de ocorrências) no índice e buscar um termo no índice. Esse módulo é importante pois ele faz com que os demais módulos não precisem ter conhecimento da estrutura interna do índice. Isso faz com que seja possível mudar a estrutura de dados que é utilizada pelo índice sem que o restante do programa precise ser modificado (desde que a API do módulo seja mantida). Essa característica mostra é possível se alcançar uma modularização semelhante às linguagens orientadas à objeto em uma linguagem funcional utilizando apenas estruturas de dados imutáveis.
+\textbf{Index}. É responsável por abstrair o acesso ao índice. Neste módulo existem funções para criar um índice, inserir um documento (uma lista de ocorrências) no índice e buscar um termo no índice. Esse módulo é importante pois ele faz com que os demais módulos não precisem ter conhecimento da estrutura interna do índice. Isso faz com que seja possível mudar a estrutura de dados que é utilizada pelo índice sem que o restante do programa precise ser modificado (desde que a API do módulo seja mantida). Essa característica mostra que é possível se alcançar uma modularização semelhante às linguagens orientadas à objeto em uma linguagem funcional utilizando apenas estruturas de dados imutáveis.
 
-\textbf{Query}. É responsável pela construção e execução de consultas. Esse módulos tem funções para realizar o \emph{parser} da consulta fornecida pelo usuário e para executar uma dada consulta.
+\textbf{Query}. É responsável pela construção e execução de consultas. Esse módulos tem funções para realizar o \emph{parsing} da consulta fornecida pelo usuário e para executar uma dada consulta.
 
-\textbf{Main}. É o ponto de entrada do programa. Ele que recebe e faz o \emph{parser} dos argumentos fornecidos pelo usuário, chama as funções de outros módulos para obter os documentos, processá-los, e inserí-los no índice. Em seguida chama funções do módulo \emph{Query} realizar a consulta e, por fim, imprime o resultado final com o ordenamento e a formatação correta para o usuário.
+\textbf{Main}. É o ponto de entrada do programa. Ele que recebe e faz o \emph{parsing} dos argumentos fornecidos pelo usuário, chama as funções de outros módulos para obter os documentos, processá-los, e inserí-los no índice. Em seguida chama funções do módulo \emph{Query} para realizar a consulta e, por fim, imprime o resultado final com o ordenamento e a formatação correta para o usuário.
 
 
 \section{Versão paralela}
@@ -85,7 +81,7 @@ Todo o código produzido neste trabalho é aberto e está disponível junto com 
 
 \subsection{Índice}
 
-A estrutura do índice em si é a mesma da versão sequencial. Porém, como deve ser possível executar consultas durante o processo de indexação, a utilização do índice teve que ser repensada. A razão para isso é que consultas parciais executadas enquanto a indexação ainda não terminou não são úteis, uma vez que consultas consecutivas vão ter sempre resultados cumulativos. Por exemplo, se uma consulta for executada quando apenas 2 documentos foram indexados, um resultado parcial \emph{X} será produzido. Se a mesma consulta for executada novamente no futuro, quando um total de 5 documentos tiverem sido indexados, o resultado produzido será \emph{X + Y}, onde \emph{Y} consiste no resultado da consulta nos 3 novos arquivos que foram indexados. Dessa forma não se tem ganho na paralelização das consultas.
+A estrutura do índice em si é a mesma da versão sequencial. Porém, como deve ser possível executar consultas durante o processo de indexação, a utilização do índice teve que ser repensada. A razão para isso é que na versão sequencial é utilizado apenas um índice global que armazena os termos de toda base de documentos. Se na versão paralela essa mesma abordagem fosse utilizada, a paralelização das consultas não melhoraria o desempenho da aplicação pois consultas consecutivas iriam sempre ter resultados cumulativos. Por exemplo, se uma consulta for executada quando apenas 2 documentos foram indexados, um resultado parcial \emph{X} será produzido. Se a mesma consulta for executada novamente no futuro, quando um total de 5 documentos tiverem sido indexados, o resultado produzido será \emph{X + Y}, onde \emph{Y} consiste no resultado da consulta nos 3 novos arquivos que foram indexados. Dessa forma, não se tem ganho na paralelização das consultas.
 
 Para contornar esse problema, existem duas técnicas que podem ser aplicadas para realizar o processamento paralelo de consultas: o particionamento de documentos e o particionamento de termos \cite{buttcher2010information}. As duas abordagens dividem o índice em subíndices por meio de uma \emph{n}-partição por disjunção. Na primeira abordagem cada subíndice contém um subconjunto do conjunto de todos os da base de documentos, enquanto na segunda, cada subíndice contém um subconjunto do conjunto de todos os termos. Para o propósito desse trabalho apenas o particionamento de documentos pode ser utilizado porque o particionamento de termos necessita de um conhecimento prévio da base de documentos.
 
@@ -110,6 +106,36 @@ Alguns módulos utilizados na versão sequencial foram mantidos sem modificaçõ
 
 \textbf{Logger}. É responsável por gerenciar o indicador de progresso do programa. Ele roda em uma \emph{thread} separada e fica recebendo mensagens de status dos demais módulos informando o progresso. Baseado nesses status as mensagens de indicação de progresso são formatadas e impressas no \emph{console} para o usuário durante a execução do programa.
 
-\textbf{Main}. Como o controle do processamento dos arquivos e das consultas foi delegado ao módulo \emph{Engine}, o \emph{Main} na versão paralela apenas faz o \emph{parser} dos parâmetros fornecidos pelo usuário e inicia o \emph{Scanner}, o \emph{Engine} e o \emph{Logger}.
+\textbf{Main}. Como o controle do processamento dos arquivos e das consultas foi delegado ao módulo \emph{Engine}, o \emph{Main} na versão paralela apenas faz o \emph{parsing} dos parâmetros fornecidos pelo usuário e inicia o \emph{Scanner}, o \emph{Engine} e o \emph{Logger}.
 
+
+\section{Comparação das implementações}
+
+O principal ponto de divergência entre as duas implementações está relacionado ao fato do modelo de STM de Clojure não prover o operador de bloqueio. Como em Haskell existe esse operador (a função \verb|retry|) todo compartilhamento de memória e sincronização das \emph{threads} pôde ser feito utilizando apenas memória transacional.
+
+Em decorrência dessa limitação, alguns dos mecanismos utilizados na implementação em Haskell tiveram que ser reestruturados na implementação em Clojure. O principal exemplo dessa diferença é o modelo produtor-consumidor, descrito atenriormente, que foi bastante utilizado na solução proposta para compartilhar memória e sincronizar as \emph{threads}. Em Haskell, foram utilizados \emph{buffers} compartilhados entre as \emph{threads} para realizar essa tarefa. Esses \emph{buffers} foram contruídos utilizando \verb|TChan|s\footnote{http://hackage.haskell.org/packages/archive/stm/2.4.2/doc/html/Control-Concurrent-STM-TChan.html}, que internamente são modelados utilizando duas \verb|TVar|s. A principal função desses \emph{buffers} é, além de compartilhar memória entre as \emph{threads}, bloquear os consumidores que tentam realizar leitura quando o \emph{buffer} está vazio.
+
+Em Clojure, a única maneira se simular exatamente o mesmo funcionamento do modelo produtor-consumidor utilizado em Haskell é através da classe \verb|LinkedBlockingQueue|\footnote{http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/LinkedBlockingQueue.html} de Java. Essa classe é implementa utilizando \emph{locks} (mais especificamente, \verb|ReentrantLock|\footnote{http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/locks/ReentrantLock.html}) para garantir o bloqueio dos consumidores. A utilização dessa classe foi minimizada ao máximo com o objetivo utilizar na solução implementada em Clojure as construções que são providas diretamente pela linguagem. Dessa forma, apenas o \emph{buffer} utilizado para compartilhar os subíndices disponíveis entre as \emph{threads} de processamento e indexação foram modelos por meio da classe \verb|LinkedBlockingQueue|.
+
+As demais utilizações do modelo produtor-consumidor foram representadas em Clojure como uma comunicação assíncrona por meio de notificações. Para isso foram utilizados os agentes, descritos na Seção 3.3. Os agentes provêem uma unidade de memória compartilhada que é atualizada através de ações assíncronas executadas em uma \emph{thread} separada. Além disso é possível registrar funções a um agente, conhecidas como \verb|watchers|\footnote{http://clojure.github.io/clojure/clojure.core-api.html\#clojure.core/add-watch}, que serão chamadas sempre que o valor do agente mudar (semelhante a um mecanismo de \emph{callbacks}). A comunicação com o \verb|Logger|, por exemplo, foi modelada dessa forma. Ao invés de manter uma \emph{thread} dedicada que fica bloqueada esperando novas mensagens serem adicionadas ao \emph{buffer}, um agente é utilizado para guardar as mensagens enviadas ao \verb|Logger|. Dessa forma, para enviar uma mensagem para o \verb|Logger|, a \emph{thread} remetente deve enviar uma ação de \emph{append} junto com mensagem em questão para um agente específico, que é executada assincronamente em outra \emph{thread} gerenciada pelo \emph{runtime} de Clojure. Depois, quando essa ação for executada, uma função específica que foi registrada como \verb|watcher| do agente do \verb|Logger| será responsável por processar a mensagem inserida e imprimí-la com a formatação correta para o usuário.
+
+Outra divergência indiretamente relacionada ao fato de Clojure não prover o operador de bloqueio foi notada após o término das implementações. A quantidade de transações em memória que realizam mais de uma operação é consideravelmente reduzida na implementação em Clojure ao comparar-se à implementação em Haskell. Isso aconteceu porque a maioria das transações que tinham essa característica na implementação em Haskell estavam relacionadas ao \emph{buffer} compartilhado entre as \emph{threads}. 
+
+\begin{listing}[h]
+  \begin{minted}{haskell}
+data Buffer a = Buffer (TChan a) (TVar Int) (TVar Bool)
+
+newEmptyBuffer :: STM (Buffer a)
+readBuffer :: Buffer a -> STM (Maybe a)
+writeBuffer :: Buffer a -> a -> STM ()
+enableFlag :: Buffer a -> STM ()
+readFlag :: Buffer a -> STM Bool
+  \end{minted}
+  \caption{API do módulo Buffer da implementação em Haskell}
+  \label{code:buffer-api}
+\end{listing}
+
+Para deixar essa relação mais clara, considere a API do módulo \verb|Buffer| mostrada no Código \ref{code:buffer-api}. Primeiro note que um \verb|Buffer| é representado através de um \verb|TChan|, que é o \emph{buffer} de fato, um \verb|TVar Int| que mantém a quantidade de elementos armazenados no momento e um \verb|TVar Bool| que é uma \emph{flag} indicando se a produção já terminou. Analizando a assinatura dos tipos das funções desse módulo, também é fácil de perceber que toda manipulação do \verb|Buffer| só pode ser feita dentro de uma transação. Como o \verb|Buffer| é representado como um tipo composto, e todos os valores que ele contém são variáveis transacionais, todas as operações desse módulo, por si só já executam mais de uma operação por transação. Por exemplo, sempre que um elemento é adicionado ao \emph{buffer}, além desse elemento ser adicionado ao \verb|TChan|, o contador também deve ser incrementado, caracterizando uma operação composta, já que outras \emph{threads} não devem ter acesso ao estado em que um elemento foi adicionado ao \emph{buffer} e o contador ainda não foi incrementado. Na utilização dessa API também é necessário utilizar composição de operações: quando a produção termina, geralmente, quando o produtor sabe que a produção acabou, ele executa uma transação que adiciona o último elemento ao \emph{buffer} e ao "mesmo tempo" chama a função \verb|enableFlag| para informar as \emph{threads} consumidoras que a produção terminou. Dessa forma, os consumidores conseguem ser informados quando suas execuções devem terminar.
+
+De forma resumida, essas são as principais diferenças entre as duas implementações. Existem outros pontos de divergência mas que não são diretamente relacionados à maneira que o problema foi modelado e implementado mas sim com a diferença entre as linguagens que são diversas, desde o funcionamento do sistema de tipos até como as APIs fornecidas pelas bibliotecas padrão são projetadas.
 
