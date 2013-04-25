@@ -59,7 +59,7 @@ A versão sequencial foi dividida em 5 módulos: \emph{Scanner}, \emph{Lexer}, \
  \centering
  \def\svgwidth{0.5\columnwidth}
  \input{arquitetura-sequencial.pdf_tex}
- \caption{Arquitetura dos módulos da versão sequencial}
+ \caption{Diagrama da arquitetura dos módulos da versão sequencial}
 \end{figure}
 
 \textbf{Scanner}. É responsável por percorrer recursivamente o diretório fornecido pelo usuário e seus subdiretórios em busca de arquivos texto. Esse módulo basicamente recebe um caminho como parâmetro e retorna o caminho de todos os arquivos texto achados.
@@ -95,7 +95,7 @@ Alguns módulos utilizados na versão sequencial foram mantidos sem modificaçõ
  \centering
  \def\svgwidth{0.6\columnwidth}
  \input{arquitetura-paralelo.pdf_tex}
- \caption{Comunição entre as threads}
+ \caption{Diagrama simplificado de como é feita a comunição entre threads}
 \end{figure}
 
 \textbf{Scanner}. Esse módulo teve que ser mudado para que a busca por documentos acontecesse em uma \emph{thread} separada. Assim, a descoberta de arquivos é executada paralelamente ao processamento e a indexação dos documentos. Esse comportamento caracteriza um modelo produtor-consumidor onde o \emph{Scanner} é o produtor, e o as \emph{threads} de processamento e indexação são os consumidores. Tanto na versão Clojure como na versão Haskell esse modelo é implementado por meio de um \emph{buffer} compartilhado de capacidade infinita que bloqueia os consumidores que tentam ler do \emph{buffer} vazio até que novos elementos sejam produzidos.
@@ -138,4 +138,3 @@ readFlag :: Buffer a -> STM Bool
 Para deixar essa relação mais clara, considere a API do módulo \verb|Buffer| mostrada no Código \ref{code:buffer-api}. Primeiro note que um \verb|Buffer| é representado através de um \verb|TChan|, que é o \emph{buffer} de fato, um \verb|TVar Int| que mantém a quantidade de elementos armazenados no momento e um \verb|TVar Bool| que é uma \emph{flag} indicando se a produção já terminou. Analizando a assinatura dos tipos das funções desse módulo, também é fácil de perceber que toda manipulação do \verb|Buffer| só pode ser feita dentro de uma transação. Como o \verb|Buffer| é representado como um tipo composto, e todos os valores que ele contém são variáveis transacionais, todas as operações desse módulo, por si só já executam mais de uma operação por transação. Por exemplo, sempre que um elemento é adicionado ao \emph{buffer}, além desse elemento ser adicionado ao \verb|TChan|, o contador também deve ser incrementado, caracterizando uma operação composta, já que outras \emph{threads} não devem ter acesso ao estado em que um elemento foi adicionado ao \emph{buffer} e o contador ainda não foi incrementado. Na utilização dessa API também é necessário utilizar composição de operações: quando a produção termina, geralmente, quando o produtor sabe que a produção acabou, ele executa uma transação que adiciona o último elemento ao \emph{buffer} e ao "mesmo tempo" chama a função \verb|enableFlag| para informar as \emph{threads} consumidoras que a produção terminou. Dessa forma, os consumidores conseguem ser informados quando suas execuções devem terminar.
 
 De forma resumida, essas são as principais diferenças entre as duas implementações. Existem outros pontos de divergência mas que não são diretamente relacionados à maneira que o problema foi modelado e implementado mas sim com a diferença entre as linguagens que são diversas, desde o funcionamento do sistema de tipos até como as APIs fornecidas pelas bibliotecas padrão são projetadas.
-

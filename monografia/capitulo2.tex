@@ -1,6 +1,6 @@
 \chapter{Memória Transacional em Software}
 
-Memória Transacional em Software (\emph{Software Transactional Memory} ou STM) foi proposto primeiramente por Shavit e Touitou em 1995 \cite{shavit1995software}. Porém o conceito de memória transacional já havia sido proposto em 1977 por Lomet \cite{lomet1977process}, onde foi descrito como utilizar as propriedades das transações de banco de dados para coordenar leituras e escritas concorrentes em dados compartilhados na memória.
+Memória Transacional em Software (\emph{Software Transactional Memory} ou STM) foi proposto primeiramente por Shavit e Touitou em 1995 \cite{shavit1995software}. Antes disso, o conceito de memória transacional já havia sido proposto em 1977 por Lomet \cite{lomet1977process}, onde foi descrito como se poderia utilizar as propriedades das transações de banco de dados para coordenar leituras e escritas concorrentes em dados compartilhados na memória.
 
 Em poucas palavras pode-se definir STM como um mecanismo que permite a execução de grupos de operações sobre a memória de maneira atômica \cite{harris2005composable}. Dessa forma, ao invés de proteger os dados compartilhados utilizando \emph{locks}, pode-se explicitamente agrupar as operações que devem acontecer ao "mesmo tempo". Isso elimina muitos dos problemas da sincronização baseada em \emph{locks} como inversão de prioridade, \emph{deadlocks} e a tensão entre concorrência e granularidade \cite{harris2005composable}.
 
@@ -10,7 +10,7 @@ No decorrer deste capítulo serão vistos alguns conceitos importantes que fazem
 
 Transação é um conceito oriundo da área de banco de dados e que vem sendo utilizado com sucesso há bastante tempo. Um sistema de gerenciamento de banco de dados (SGBD) é um sistema extremamente concorrente onde vários usuários podem acessar, inserir, remover e atualizar dados armazenados no banco de dados ao mesmo tempo. As transações são os mecanismos providos ao usuário de um SGBD para que este realize uma sequência de operações sem precisar se preocupar com o aspecto concorrente do sistema.
 
-Elmasri e Navathe \cite{elmasri06db} definem uma transação como "um programa em execução ou processo que inclui um ou mais acessos ao banco de dados, tais como leitura ou atualização dos registros do banco de dados". Uma definição mais interessante é dada por Harris et al. \cite{harris2010transactional}, que define uma transação como "uma sequência de ações que parecem indivisíveis e instantâneas para um observador externo". A partir dessas definições derivam-se quatro propriedades, conhecidas como ACID, que são utilizadas para descrever o comportamento desejado das transações \cite{silberschatz1997database}:
+Elmasri e Navathe \cite{elmasri06db} definem uma transação como "um programa em execução ou processo que inclui um ou mais acessos ao banco de dados, tais como leitura ou atualização dos registros do banco de dados". Uma definição mais interessante é dada por Harris \emph{et al}. \cite{harris2010transactional}, que define uma transação como "uma sequência de ações que parecem indivisíveis e instantâneas para um observador externo". A partir dessas definições derivam-se quatro propriedades, conhecidas como ACID, que são utilizadas para descrever o comportamento desejado das transações \cite{silberschatz1997database}:
 
 \begin{itemize}
  \item \emph{Atomicidade} - Ou todas as ações de uma transação acontecem e são efetivadas (\emph{commit}, em inglês) ou, em caso de falha, qualquer ação executada por uma transação parcial será desfeita e a transação será abortada.
@@ -59,7 +59,7 @@ Uma transação é abortada quando, durante sua execução, o valor de uma vari�
 
 \section{Componibilidade}
 
-Uma das grandes vantagens dos blocos atômicos é a possibilidade de se combinar uma série de operações atômicas individuais de forma que o resultado continue sendo atômico. Essa possibilidade de compor trechos de código ou funções \emph{thread safe} mantendo o resultado \emph{thread safe} não é fácil de se conseguir quando se utiliza abstrações baseadas em \emph{locks}. Para exemplificar essa propriedade, considere o código a seguir onde o problema da transfênria bancária citado anteriormente está representado em termos de memória transacional:
+Uma das grandes vantagens dos blocos atômicos é a possibilidade de se combinar uma série de operações atômicas individuais de forma que o resultado continue sendo atômico. Essa possibilidade de compor trechos de código ou funções \emph{thread-safe} mantendo o resultado \emph{thread-safe} não é algo fácil de se alcançar quando se utiliza abstrações baseadas em \emph{locks}. Para exemplificar essa propriedade, o Código \ref{code:accounts} mostra uma possível implementação de um problema clássico utilizado para demonstrar a utilização de memória trasacional. Se trata do problema das transações bancárias, que consiste na implementação de um sistema bancário que seja possível efetuar transações bancárias concorrentemente. Para garantir a consistência do saldo das contas é necessário que, durante a transferência de um conta para outra, o resultado intermediário em que a quantia desejada foi sacada de uma conta e ainda não foi depositada na outra não seja visível para outras \emph{threads}.
 
 \begin{listing}
   \begin{minted}{java}
@@ -83,9 +83,10 @@ class Account {
 }
   \end{minted}
   \caption{Exemplo da transferência bancária com STM}
+  \label{code:accounts}
 \end{listing}
 
-Com uma implementação desse tipo é garantido que ao final da execução do método \emph{transfer} a quantia desejada foi transferida de uma conta para outra sem que nenhuma outra \emph{thread} tivesse acesso ao estado intermediário, onde a quantia foi sacada de uma conta mas ainda não havia sido depositada na outra.
+Com uma implementação desse tipo é garantido que ao final da execução do método \emph{transfer} a quantia desejada foi transferida de uma conta para outra sem que nenhuma outra \emph{thread} tivesse acesso ao estado intermediário.
 
 Além do benefício de se poder compor operações para serem executadas de maneira atômicas, como pode-se perceber, o código final é consideravelmente mais simples do que a solução baseada em \emph{locks}, uma vez que os mecanismos de sincronização são implícitos. Outra vantagem é que o código da solução que utiliza memória transacional é bem semelhante à solução sequencial do problema.
 
