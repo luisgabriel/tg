@@ -3,7 +3,7 @@ set ylabel 'Duracao (segundos)'
 set terminal postscript eps 25
 set output "haskell.eps"
 
-set yrange [0:15]
+set yrange [0:40]
 
 set boxwidth 0.5
 set style fill solid

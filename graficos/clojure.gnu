@@ -3,7 +3,7 @@ set ylabel 'Duracao (segundos)'
 set terminal postscript eps 25
 set output "clojure.eps"
 
-set yrange [0:220]
+set yrange [0:40]
 
 set boxwidth 0.5
 set style fill solid

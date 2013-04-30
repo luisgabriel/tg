@@ -6,6 +6,7 @@ set output "clojure-haskell.eps"
 
 set key box lt 1 lw 1
 
+set yrange [10:30]
 set xrange [2:10]
 set xtics 2,2
 set grid

@@ -1,6 +1,8 @@
 \chapter{Resultados}
 
-Para analisar o desempenho das implementações em Clojure e Haskell foi utilizada uma base de documento composta de 27 livros de domínio público em lingua inglesa que foram obtidos por meio do projeto Gutenberg\footnote{http://www.gutenberg.org/}, totalizando 18 \emph{megabytes} de arquivos texto. Foram utilizadas também cinco consultas com tamanhos distintos e ocorrências variadas na base de documentos. Os experimentos foram executados em uma máquina com processador Intel Core i7-3770 3.4GHz com 4 núcleos físicos e 8 \emph{gigabytes} de memória RAM rodando Linux. Para o ambiente Haskell foi utilizado o compilador GHC 7.6.2 junto com a \emph{flag} de compilação \verb|-O|. Já para o ambiente Clojure foi utilizado Clojure 1.5.1 com OpenJDK 7.u17.
+Para analisar o desempenho das implementações em Clojure e Haskell foi utilizada uma base de documento composta de 60 livros de domínio público em lingua inglesa que foram obtidos por meio do projeto Gutenberg\footnote{http://www.gutenberg.org/}, totalizando 36 \emph{megabytes} de arquivos texto. Foram utilizadas também seis consultas com tamanhos distintos e ocorrências variadas na base de documentos. Os experimentos foram executados em uma máquina com processador Intel Core i7-3770 3.4GHz com 4 núcleos físicos e 8 \emph{gigabytes} de memória RAM rodando Linux. Para o ambiente Haskell foi utilizado o compilador GHC 7.6.2 junto com a \emph{flag} de compilação \verb|-O|. Já para o ambiente Clojure foi utilizado Clojure 1.5.1 com OpenJDK 7.u17.
+
+Todo o código produzido neste trabalho é aberto e está disponível junto com o histórico de desenvolvimento no GitHub\footnote{https://github.com/luisgabriel/tsearch}\footnote{https://github.com/luisgabriel/tsearch-clj}.
 
 \begin{figure}[h]
  \centering
@@ -11,7 +13,7 @@ Para analisar o desempenho das implementações em Clojure e Haskell foi utiliza
 
 A Figura \ref{fig:clj-hs-comp} mostra um gráfico onde o eixo horizontal representa a quantidade de \emph{threads} passada como argumento para o programa e o eixo vertical a duração em segundos da execução do programa. Cada ponto do gráfico representa a média do tempo de execução obtido a partir de 10 execuções consecutivas do programa calculado por meio do comando \verb|time| do Unix.
 
-Como pode-se perceber o desempenho da implementação em Clojure foi consideravelmente pior que a implementação em Haskell. O comportamento das curvas é semelhante, mostrando que com o aumento da quantidade de \emph{threads} de indexação, o tempo total da execução do programa diminui. Isso mostra essa diferença entre o desempenho das duas implementações é um indicativo algum outro tipo de problema. Depois de alguma investigação, foi verificado, como mostra a Figura \ref{fig:clj-hs}, que a diferença de desempenho entre as versões sequenciais escritas em Clojure e Haskell também era bastante discrepante.
+Como pode-se perceber, o desempenho de ambas as implementações foi bastante semelhante. As duas implementações se comportaram de maneira escalável durante os experimentos realizados, fazendo com que o aumento do número de \emph{threads} acarretasse em uma melhora do desempenho total do sistema.
 
 \begin{figure}[!h]
  \begin{minipage}{0.5\textwidth}
@@ -21,12 +23,22 @@ Como pode-se perceber o desempenho da implementação em Clojure foi considerave
  \begin{minipage}{0.5\textwidth}
   \includegraphics[scale=0.63]{imagens/clojure.eps}
  \end{minipage}
- \caption{Gráficos de comparação entre as versões sequenciais e paralelas}
+ \caption{Gráficos de comparação de desempenho entre das versões sequenciais e paralelas}
  \label{fig:clj-hs}
 \end{figure}
 
-Depois de realização de alguns \emph{profilings} na versão sequencial em Clojure, foi identificado que o maior gargalo do programa estava acontecendo no processamento dos documentos. O processamento é feito igualmente nas duas versões, os arquivos são lidos em forma de uma única \verb|string|, em seguida são filtrados os caracteres alfanuméricos, depois a capitalização é uniformizada e por último a \verb|string| é quebrada de acordo com os separadores de espaço para gerar uma lista de palavras. O principal problema é que os arquivos em Clojure são lidos como instâncias da classe \verb|String| de Java, porém, quando é feito o processamento dessa \verb|String|, internamente ela é convertida para uma \emph{lazy sequence} \footnote{http://clojure.github.io/clojure/clojure.core-api.html\#clojure.core/lazy-seq}, em seguida, quando a sequência vai ser quebrada ela é transfomada em \verb|String| novamente. Essas transformações degradam bastante o desempenho do programa. Em Haskell esse tipo de problema não acontece pois não há conversões, inclusive, como a leitura de arquivos também acontece de maneira \emph{lazy} em Haskell, mesmo evitando as conversões desnecessárias na implementação em Clojure, o desempenho da versão Haskell no processamento dos documentos provavelmente será melhor.
+A Figura \ref{fig:clj-hs}, por sua vez, mostra os mesmos dados do gráfico anterior com a adição dos resultados obtidos da execução dos mesmos experimentos com as implementações sequenciais em cada linguagem. Com esses gráficos pode-se notar que o principal objetivo da paralelização do problema foi alcançado já que a versão paralela, em todas as configurações testadas, conseguiu ter desempenho melhor que a versão sequencial.
 
-Embora o provável problema tenha sido identificado e várias alternativas tenham sido tentadas, não foi possível melhorar o desempenho da versão Clojure em tempo hábil para ser incluido no presente trabalho. Entretanto, como pôde ser visto na Figura \ref{fig:clj-hs} a paralelização realizada em ambas as linguagens foram bastante benéficas e diminuiram de maneira considerável o tempo total de execução dos programas, como era esperado.
+\begin{figure}[!h]
+ \begin{minipage}{0.5\textwidth}
+  \centering
+  \includegraphics[scale=0.63]{imagens/loc-haskell.eps}
+ \end{minipage}
+ \begin{minipage}{0.5\textwidth}
+  \includegraphics[scale=0.63]{imagens/loc-clojure.eps}
+ \end{minipage}
+ \caption{Gráficos de comparação da quantidade de linhas de código}
+ \label{fig:clj-hs-loc}
+\end{figure}
 
-Ainda com relação à Figura \ref{fig:clj-hs}, é importante notar que a versão Clojure apresentou pouca variação de desempenho a partir de 4 \emph{threads}. Isso pode ser um reflexo do tipo de \emph{thread} que foi utilizada para representar as \emph{threads} de processamento e indexação. Nesse caso, foi utilizado a classe \verb|Thread| de Java que internamente, na máquina virtual de Java, são representadas como \emph{threads} do sistema operacional. Já implementação em Haskell foram utilizadas \emph{threads} criadas por meio da função \verb|forkIO|, que criam \emph{green threads} que são gerenciadas pelo \emph{runtime} da linguagem. As \emph{green threads} são mais leves e sua utilização pode ter impacto direto no aumento do desempenho da aplicação.
+A Figura \ref{fig:clj-hs-loc} mostra o comparativo entre a quantidade de linhas de código total de todas as implementações. Como pode-se perceber, a paralelização implicou em um aumento considerável na quantidade de linhas de código dos projetos. No caso de Clojure, foi um aumento de aproximadamente 120\%, enquanto em Haskell foi um aumento de 200\%. Esse resultado mostra que, de fato, paralelizar um programa implica no aumento da complexidade da solução. Em um ambiente industrial, se faz necessário uma análise mais minuciosa para entender a relação de custo-benefício de se escrever sistemas concorrentes, pois, dependendo do cenário, melhorar o desempenho de um sistema em torno de 40\% ao custo de duplicar ou triplicar a base de código pode ser inaceitável.
