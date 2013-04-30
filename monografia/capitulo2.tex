@@ -57,7 +57,7 @@ Existem dois resultados definidos distintos que podem decorrer da execução do 
 Uma transação é abortada quando, durante sua execução, o valor de uma variável compartilhada é alterado antes que essa transação realize \emph{commit}. Quando isso ocorre, o sistema re-executa a transação na expectativa que não ocorra conflito novamente.
 
 
-\section{Componibilidade}
+\section{Composabilidade}
 
 Uma das grandes vantagens dos blocos atômicos é a possibilidade de se combinar uma série de operações atômicas individuais de forma que o resultado continue sendo atômico. Essa possibilidade de compor trechos de código ou funções \emph{thread-safe} mantendo o resultado \emph{thread-safe} não é algo fácil de se alcançar quando se utiliza abstrações baseadas em \emph{locks}. Para exemplificar essa propriedade, o Código \ref{code:accounts} mostra uma possível implementação de um problema clássico utilizado para demonstrar a utilização de memória trasacional. Se trata do problema das transações bancárias, que consiste na implementação de um sistema bancário que seja possível efetuar transações bancárias concorrentemente. Para garantir a consistência do saldo das contas é necessário que, durante a transferência de um conta para outra, o resultado intermediário em que a quantia desejada foi sacada de uma conta e ainda não foi depositada na outra não seja visível para outras \emph{threads}.
 
