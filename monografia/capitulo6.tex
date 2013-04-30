@@ -13,9 +13,9 @@ Todo o código produzido neste trabalho é aberto e está disponível junto com 
 
 A Figura \ref{fig:clj-hs-comp} mostra um gráfico onde o eixo horizontal representa a quantidade de \emph{threads} passada como argumento para o programa e o eixo vertical a duração em segundos da execução do programa. Cada ponto do gráfico representa a média do tempo de execução obtido a partir de 10 execuções consecutivas do programa calculado por meio do comando \verb|time| do Unix.
 
-Como pode-se perceber, o desempenho de ambas as implementações foi bastante semelhante. As duas implementações se comportaram de maneira escalável durante os experimentos realizados, fazendo com que o aumento do número de \emph{threads} acarretasse em uma melhora do desempenho total do sistema.
+Como pode-se perceber, o desempenho de ambas as implementações foi bastante semelhante. As duas apresentaram melhora do desempenho total do sistema com o aumento do número de \emph{threads}. Porém, a melhoria de desempenho não foi grande se comparada ao aumento nos recursos de processamento disponíveis. 
 
-\begin{figure}[!h]
+\begin{figure}[h]
  \begin{minipage}{0.5\textwidth}
   \centering
   \includegraphics[scale=0.63]{imagens/haskell.eps}
@@ -27,7 +27,23 @@ Como pode-se perceber, o desempenho de ambas as implementações foi bastante se
  \label{fig:clj-hs}
 \end{figure}
 
+Algumas características de cada implementação podem ter contribuído para que o aumento de desempenho não fosse tão alto. Na implementação em Haskell, por exemplo, utilizou-se memória transacional de forma excessiva, inclusive em cenários onde não haviam operações compostas. Dado que existe um \emph{overhead} relacionado à manutenção de \emph{logs} e sincronização das transações, é possível que esse fato tenha contribuído para degradar o desempenho total do sistema. Já na versão Clojure, pode-se citar a utilização de \emph{threads} do sistema operacional ao invés de \emph{green threads} como um fato que pode ter contribuído para a pequena melhora no desempenho do programa. Estudos subseqüentes precisarão analisar com mais profundidade os fatores que acarretaram no comportamento não-escalável dessas implementações.
+
+\begin{figure}[h]
+ \begin{minipage}{0.5\textwidth}
+  \centering
+  \includegraphics[scale=0.63]{imagens/haskell.eps} % trocar a imagem
+ \end{minipage}
+ \begin{minipage}{0.5\textwidth}
+  \includegraphics[scale=0.63]{imagens/clojure.eps} % trocar a imagem
+ \end{minipage}
+ \caption{Gráficos de comparação das versões em Clojure com e sem otimização}
+ \label{fig:clj-opt}
+\end{figure}
+
 A Figura \ref{fig:clj-hs}, por sua vez, mostra os mesmos dados do gráfico anterior com a adição dos resultados obtidos da execução dos mesmos experimentos com as implementações sequenciais em cada linguagem. Com esses gráficos pode-se notar que o principal objetivo da paralelização do problema foi alcançado já que a versão paralela, em todas as configurações testadas, conseguiu ter desempenho melhor que a versão sequencial.
+
+Também é importante observar que foi necessário aplicar, após finalização da implementação, algumas otimizações ao código em Clojure para que fosse possível atingir o desempenho apresentado nas Figuras \ref{fig:clj-hs-comp} e \ref{fig:clj-hs}. Como pode-se verificar na figura \ref{fig:clj-opt}, a diferença de desempenho entre os código com e sem otimização é muito grande. A principal causa dessa diferença está atrelada ao uso de reflexão por parte do compilador de Clojure para realizar chamadas de métodos Java. Para que o código desenvolvido nesse trabalho tivesse um desempenho aceitável, foi necessário utilizar anotações de tipos em pontos do código onde métodos Java eram chamados diretamente. Esse resultado é importante pois mostra que, apesar das vantagem impostas pela tipagem dinâmica de Clojure, o desempenho da linguagem é fortemente afetado pela presença de informação de tipo em tempo de compilação
 
 \begin{figure}[!h]
  \begin{minipage}{0.5\textwidth}
@@ -41,4 +57,4 @@ A Figura \ref{fig:clj-hs}, por sua vez, mostra os mesmos dados do gráfico anter
  \label{fig:clj-hs-loc}
 \end{figure}
 
-A Figura \ref{fig:clj-hs-loc} mostra o comparativo entre a quantidade de linhas de código total de todas as implementações. Como pode-se perceber, a paralelização implicou em um aumento considerável na quantidade de linhas de código dos projetos. No caso de Clojure, foi um aumento de aproximadamente 120\%, enquanto em Haskell foi um aumento de 200\%. Esse resultado mostra que, de fato, paralelizar um programa implica no aumento da complexidade da solução. Em um ambiente industrial, se faz necessário uma análise mais minuciosa para entender a relação de custo-benefício de se escrever sistemas concorrentes, pois, dependendo do cenário, melhorar o desempenho de um sistema em torno de 40\% ao custo de duplicar ou triplicar a base de código pode ser inaceitável.
+Por fim, a Figura \ref{fig:clj-hs-loc} mostra o comparativo entre a quantidade de linhas de código total de todas as implementações. Como pode-se perceber, a paralelização implicou em um aumento considerável na quantidade de linhas de código dos projetos. No caso de Clojure, foi um aumento de aproximadamente 120\%, enquanto em Haskell foi um aumento de 200\%. Esse resultado mostra que, de fato, paralelizar um programa implica no aumento da complexidade da solução. Em um ambiente industrial, se faz necessário uma análise mais minuciosa para entender a relação de custo-benefício de se escrever sistemas concorrentes, pois, dependendo do cenário, melhorar o desempenho de um sistema em torno de 40\% ao custo de duplicar ou triplicar a base de código pode ser inaceitável.
