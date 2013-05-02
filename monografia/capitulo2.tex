@@ -19,7 +19,7 @@ Elmasri e Navathe \cite{elmasri06db} definem uma transação como "um programa e
  \item \emph{Durabilidade} - Se uma transação foi efetivada, as mudanças feitas no banco de dados devem sobreviver à qualquer falha de sistema.
 \end{itemize}
 
-As transações de um sistema de memória transacional são não-duraveis. A durabilidade não necessária uma vez que os dados manipulados por uma transação não são mantidos após o termino da execução do programa. \cite{harris2010transactional}
+As transações de um sistema de memória transacional são não-duraveis. A durabilidade não é necessária uma vez que os dados manipulados por uma transação não são mantidos após o termino da execução do programa. \cite{harris2010transactional}
 
 
 \section{Bloco atômico}
@@ -93,7 +93,7 @@ Além do benefício de se poder compor operações para serem executadas de mane
 
 \section{Controle de Concorrência}
 
-O fato de que uma transação deve ser abortada e re-executada quando acontece um conflito não impõe nenhuma restrição com relação à como e quando o sistema de memória transacional deve detectar o conflito e acionar o abortamento. Esse tipo de decisão é feito pelo controle de concorrência.
+O fato de que uma transação deve ser abortada e re-executada quando acontece um conflito não impõe nenhuma restrição com relação a como e quando o sistema de memória transacional deve detectar o conflito e acionar o abortamento. Esse tipo de decisão é feito pelo controle de concorrência.
 
 Para que os conflitos sejam detectados e resolvidos corretamente um sistema de memória transacional precisa de sincronização para coordenar o acesso concorrente ao dados compartilhados. Essa sincronização é realizada com base em três eventos que podem ocorrer em diferentes momentos, mas não em uma ordem diferente \cite{harris2010transactional}:
 
