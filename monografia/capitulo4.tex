@@ -60,6 +60,18 @@ Existem dois tipos de \emph{threads} em Haskell. Um deles é conhecido como \emp
 
 O outro tipo de \emph{thread} é conhecido como \emph{threads} de Haskell. São bem mais leves que as \emph{threads} do sistema operacional por necessitarem de menos recursos do sistema \cite{marlow2009runtime}. Cada \emph{thread} de Haskell executa em uma pilha privada de tamanho finito mas compartilha a mesma \emph{heap} com as demais \emph{threads}. Geralmente várias \emph{threads} de Haskell executam em apenas uma \emph{thread} do sistema operacional. Utiliza-se a função \verb|forkIO|\footnote{http://www.haskell.org/ghc/docs/latest/html/libraries/base/Control-Concurrent.html\#v:forkIO} para criar esse tipo de \emph{thread}.
 
+\begin{listing}
+  \begin{minted}{haskell}
+main = do
+    forkIO (replicateM_ 100000 (putChar 'A'))
+    replicateM_ 100000 (putChar 'B')
+  \end{minted}
+  \caption{Exemplo de utilização do forkIO}
+  \label{code:forkio}
+\end{listing}
+
+O Código \ref{code:forkio} exemplifica a utilização da função \verb|forkIO|. No exemplo, cria-se uma \emph{thread} que imprime repetidamente (100000 vezes) o caracter A na saída do sistema, enquanto a \emph{main thread} do programa imprime a mesma quantidade de vezes o caracter B. É esperado que seja impresso como saída desse programa caracteres A e B alternados.
+
 É importante notar que ambos os tipos de \emph{threads} são gerenciadas por um escalonador próprio que faz parte da biblioteca de tempo de execução de Haskell (\emph{Haskell Runtime System} ou RTS). 
 
 \section{Memória Transacional em Haskell}

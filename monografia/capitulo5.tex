@@ -2,7 +2,7 @@
 
 \newcommand{\bigO}[1]{\ensuremath{\operatorname{O}\bigl(#1\bigr)}}
 
-Para entender melhor quais são as diferenças na prática entre os modelos de STM de Clojure e Haskell, foi escolhido como objeto de estudo a implementação de um software não trivial em ambas as linguagens. Trata-se de um motor de busca paralelo para arquivos textuais. Esse problema foi extraído do trabalho de Pankratius e Adi-Tabatabai \cite{pankratius2011study} onde ele é utilizado para comparar a utilização de sincronização baseada em \emph{locks} com a utilização de memória transacional. Nesse experimento, um grupo de alunos de pós-graduação foi dividido em duplas, onde parte das duplas teve que desenvolver o motor de busca utilizando \emph{locks} e outra parte utilizando memória transacional, ambos com a linguagem C++. O experimento durou um total de 14 semanas, sendo 4 semanas de treinamento em programação paralela e 10 semanas para o desenvolvimento do projeto. Também foi permitido aos grupos a utilização de qualquer estrutura de dados e qualquer biblioteca de código aberto disponível na internet com o objetivo de simular um ambiente industrial real.
+Para entender melhor quais são as diferenças na prática entre os modelos de STM de Clojure e Haskell, foi escolhido como objeto de estudo a implementação de um software não trivial em ambas as linguagens. Trata-se de um motor de busca paralelo para arquivos textuais. Esse problema foi extraído do trabalho de Pankratius e Adi-Tabatabai \cite{pankratius2011study} onde ele é utilizado para comparar a utilização de sincronização baseada em \emph{locks} com a utilização de memória transacional. Nesse experimento, um grupo de alunos de pós-graduação foi dividido em duplas, onde parte das duplas teve que desenvolver o motor de busca utilizando \emph{locks} e outra parte utilizando memória transacional, ambos com a linguagem C++.
 
 Na primeira parte deste capítulo o problema será especificado. Em seguida será descrito em detalhes como a solução do problema foi modelada e implementada nas duas linguagens. E por fim, será levantado as principais diferenças entre as duas implementações.
 
@@ -83,6 +83,12 @@ A estrutura do índice em si é a mesma da versão sequencial. Porém, como deve
 
 Para contornar esse problema, existem duas técnicas que podem ser aplicadas para realizar o processamento paralelo de consultas: o particionamento de documentos e o particionamento de termos \cite{buttcher2010information}. As duas abordagens dividem o índice em subíndices por meio de uma \emph{n}-partição por disjunção. Na primeira abordagem cada subíndice contém um subconjunto do conjunto de todos os da base de documentos, enquanto na segunda, cada subíndice contém um subconjunto do conjunto de todos os termos. Para o propósito desse trabalho apenas o particionamento de documentos pode ser utilizado porque o particionamento de termos necessita de um conhecimento prévio da base de documentos.
 
+\begin{figure}[h]
+ \centering
+ \includegraphics[scale=0.5]{imagens/particionamento-indice.png}
+ \caption{Representação das duas abordagens de particionamento de índice}
+\end{figure}
+
 Assim, para resolver o problema da consulta durante a indexação são utilizados vários subíndices onde cada um tem um número máximo de documentos que podem ser indexados. Quando um subíndice atinge o número máximo de documentos ele está pronto para ser consultado. Tanto o número máximo de documentos por subíndice quanto a quantidade inicial de subíndices criados podem ser configurados pelo usuário por meio de argumentos de linha de comando.
 
 \subsection{Arquitetura}
@@ -105,34 +111,3 @@ Alguns módulos utilizados na versão sequencial foram mantidos sem modificaçõ
 \textbf{Logger}. É responsável por gerenciar o indicador de progresso do programa. Ele roda em uma \emph{thread} separada e fica recebendo mensagens de status dos demais módulos informando o progresso. Baseado nesses status as mensagens de indicação de progresso são formatadas e impressas no \emph{console} para o usuário durante a execução do programa.
 
 \textbf{Main}. Como o controle do processamento dos arquivos e das consultas foi delegado ao módulo \verb|Engine|, o \verb|Main| na versão paralela apenas faz o \emph{parsing} dos parâmetros fornecidos pelo usuário e inicia o \verb|Scanner|, o \verb|Engine| e o \verb|Logger|.
-
-
-\section{Comparação das implementações}
-
-O principal ponto de divergência entre as duas implementações está relacionado ao fato do modelo de STM de Clojure não prover o operador de bloqueio. Como em Haskell existe esse operador (a função \verb|retry|) todo compartilhamento de memória e sincronização das \emph{threads} pôde ser feito utilizando apenas memória transacional.
-
-Em decorrência dessa limitação, alguns dos mecanismos utilizados na implementação em Haskell tiveram que ser reestruturados na implementação em Clojure. O principal exemplo dessa diferença é o modelo produtor-consumidor, descrito atenriormente, que foi bastante utilizado na solução proposta para compartilhar memória e sincronizar as \emph{threads}. Em Haskell, foram utilizados \emph{buffers} compartilhados entre as \emph{threads} para realizar essa tarefa. Esses \emph{buffers} foram contruídos utilizando \verb|TChan|s\footnote{http://hackage.haskell.org/packages/archive/stm/2.4.2/doc/html/Control-Concurrent-STM-TChan.html}, que internamente são modelados utilizando duas \verb|TVar|s. A principal função desses \emph{buffers} é, além de compartilhar memória entre as \emph{threads}, bloquear os consumidores que tentam realizar leitura quando o \emph{buffer} está vazio.
-
-Em Clojure, a única maneira se simular exatamente o mesmo funcionamento do modelo produtor-consumidor utilizado em Haskell é através da classe \verb|LinkedBlockingQueue|\footnote{http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/LinkedBlockingQueue.html} de Java ou semelhantes. Essa classe é implementa utilizando \emph{locks} (mais especificamente, \verb|ReentrantLock|\footnote{http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/locks/ReentrantLock.html}) para garantir o bloqueio dos consumidores. A utilização dessa classe foi minimizada ao máximo com o objetivo utilizar na solução implementada em Clojure as construções que são providas diretamente pela linguagem. Dessa forma, apenas o \emph{buffer} utilizado para compartilhar os subíndices disponíveis entre as \emph{threads} de processamento e indexação foram modelos por meio da classe \verb|LinkedBlockingQueue|.
-
-As demais utilizações do modelo produtor-consumidor foram representadas em Clojure como uma comunicação assíncrona por meio de notificações. Para isso foram utilizados os agentes, descritos na Seção 3.3. Os agentes provêem uma unidade de memória compartilhada que é atualizada através de ações assíncronas executadas em uma \emph{thread} separada. Além disso é possível registrar funções a um agente, conhecidas como \verb|watchers|\footnote{http://clojure.github.io/clojure/clojure.core-api.html\#clojure.core/add-watch}, que serão chamadas sempre que o valor do agente mudar (semelhante a um mecanismo de \emph{callbacks}). A comunicação com o \verb|Logger|, por exemplo, foi modelada dessa forma. Ao invés de manter uma \emph{thread} dedicada que fica bloqueada esperando novas mensagens serem adicionadas ao \emph{buffer}, um agente é utilizado para guardar as mensagens enviadas ao \verb|Logger|. Dessa forma, para enviar uma mensagem para o \verb|Logger|, a \emph{thread} remetente deve enviar uma ação de \emph{append} junto com mensagem em questão para um agente específico, que é executada assincronamente em outra \emph{thread} gerenciada pelo \emph{runtime} de Clojure. Depois, quando essa ação for executada, uma função específica que foi registrada como \verb|watcher| do agente do \verb|Logger| será responsável por processar a mensagem inserida e imprimí-la com a formatação correta para o usuário.
-
-Outra divergência, indiretamente relacionada ao fato de Clojure não prover o operador de bloqueio, foi notada após o término das implementações. A quantidade de transações em memória que realizam mais de uma operação é consideravelmente reduzida na implementação em Clojure ao comparar-se à implementação em Haskell. Isso aconteceu porque a maioria das transações que tinham essa característica na implementação em Haskell estavam relacionadas ao \emph{buffer} compartilhado entre as \emph{threads}. 
-
-\begin{listing}[h]
-  \begin{minted}{haskell}
-data Buffer a = Buffer (TChan a) (TVar Int) (TVar Bool)
-
-newEmptyBuffer :: STM (Buffer a)
-readBuffer :: Buffer a -> STM (Maybe a)
-writeBuffer :: Buffer a -> a -> STM ()
-enableFlag :: Buffer a -> STM ()
-readFlag :: Buffer a -> STM Bool
-  \end{minted}
-  \caption{API do módulo Buffer da implementação em Haskell}
-  \label{code:buffer-api}
-\end{listing}
-
-Para deixar essa relação mais clara, considere a API do módulo \verb|Buffer| mostrada no Código \ref{code:buffer-api}. Primeiro note que um \verb|Buffer| é representado através de um \verb|TChan|, que é o \emph{buffer} de fato, um \verb|TVar Int| que mantém a quantidade de elementos armazenados no momento e um \verb|TVar Bool| que é uma \emph{flag} indicando se a produção já terminou. Analizando a assinatura dos tipos das funções desse módulo, também é fácil de perceber que toda manipulação do \verb|Buffer| só pode ser feita dentro de uma transação. Como o \verb|Buffer| é representado como um tipo composto, e todos os valores que ele contém são variáveis transacionais, todas as operações desse módulo, por si só já executam mais de uma operação por transação. Por exemplo, sempre que um elemento é adicionado ao \emph{buffer}, além desse elemento ser adicionado ao \verb|TChan|, o contador também deve ser incrementado, caracterizando uma operação composta, já que outras \emph{threads} não devem ter acesso ao estado em que um elemento foi adicionado ao \emph{buffer} e o contador ainda não foi incrementado. Na utilização dessa API também é necessário utilizar composição de operações: quando a produção termina, geralmente, quando o produtor sabe que a produção acabou, ele executa uma transação que adiciona o último elemento ao \emph{buffer} e ao "mesmo tempo" chama a função \verb|enableFlag| para informar as \emph{threads} consumidoras que a produção terminou. Dessa forma, os consumidores conseguem ser informados quando suas execuções devem terminar.
-
-De forma resumida, essas são as principais diferenças entre as duas implementações. Existem outros pontos de divergência mas que não são diretamente relacionados à maneira que o problema foi modelado e implementado mas sim com a diferença entre as linguagens que são diversas, desde o funcionamento do sistema de tipos até como as APIs fornecidas pelas bibliotecas padrão são projetadas.

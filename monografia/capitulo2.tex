@@ -59,12 +59,12 @@ Uma transação é abortada quando, durante sua execução, o valor de uma vari�
 
 \section{Composabilidade}
 
-Uma das grandes vantagens dos blocos atômicos é a possibilidade de se combinar uma série de operações atômicas individuais de forma que o resultado continue sendo atômico. Essa possibilidade de compor trechos de código ou funções \emph{thread-safe} mantendo o resultado \emph{thread-safe} não é algo fácil de se alcançar quando se utiliza abstrações baseadas em \emph{locks}. Para exemplificar essa propriedade, o Código \ref{code:accounts} mostra uma possível implementação de um problema clássico utilizado para demonstrar a utilização de memória trasacional. Se trata do problema das transações bancárias, que consiste na implementação de um sistema bancário que seja possível efetuar transações bancárias concorrentemente. Para garantir a consistência do saldo das contas é necessário que, durante a transferência de um conta para outra, o resultado intermediário em que a quantia desejada foi sacada de uma conta e ainda não foi depositada na outra não seja visível para outras \emph{threads}.
+Uma das grandes vantagens dos blocos atômicos é a possibilidade de se combinar uma série de operações atômicas individuais de forma que o resultado continue sendo atômico. Essa possibilidade de compor trechos de código ou funções \emph{thread-safe} mantendo o resultado \emph{thread-safe} não é algo fácil de se alcançar quando se utiliza abstrações baseadas em \emph{locks}. Para exemplificar essa propriedade, o Código \ref{code:accounts} mostra uma possível implementação\footnote{Esse código é apenas figurativo. Mostra como o problema poderia ser modelado em uma linguagem orientada à objetos semelhante à Java com suporte à STM.} de um problema clássico utilizado para demonstrar a utilização de memória trasacional. Se trata do problema das transações bancárias, que consiste na implementação de um sistema bancário que seja possível efetuar transações bancárias concorrentemente. Para garantir a consistência do saldo das contas é necessário que, durante a transferência de um conta para outra, o resultado intermediário em que a quantia desejada foi sacada de uma conta e ainda não foi depositada na outra não seja visível para outras \emph{threads}.
 
 \begin{listing}
   \begin{minted}{java}
 class Account {
-  private int balance;
+  private transactional int balance;
   
   public withdraw(int aumont) {
     this.balance -= aumont;
