@@ -10,19 +10,23 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
         <link rel="stylesheet" href="reveal.js/css/reveal.min.css">
-        <link rel="stylesheet" href="http://www.rvl.io/s/css/theme/palatino_sand-grey.css" id="theme">
+        <link rel="stylesheet" href="palatino_sand-grey.css" id="theme">
 
         <!-- For syntax highlighting -->
         <link rel="stylesheet" href="reveal.js/lib/css/zenburn.css">
 
         <!-- If the query includes 'print-pdf', use the PDF print sheet -->
         <script>
-            document.write( '<link rel="stylesheet" href="reveal.js/css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+            document.write('<link rel="stylesheet" href="reveal.js/css/print/' + (window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper') + '.css" type="text/css" media="print">');
         </script>
 
         <!--[if lt IE 9]>
         <script src="lib/js/html5shiv.js"></script>
         <![endif]-->
+
+        <style type="text/css">
+            .reveal .italic {font-style:italic;}
+        </style>
     </head>
 
     <body>
@@ -38,6 +42,414 @@
                     <p><small>Luís Gabriel Lima (lgnfl)</small></p>
                 </section>
 
+                <section>
+                    <h3>Cenário</h3>
+                    <ul>
+                        <li>Ascenção dos processadores <span class="italic">multicore</span></li>
+                        <li>Necessidade de paralelizar os sistemas</li>
+                        <li>Programação concorrente</li>
+                        <ul>
+                            <li>Comportamento não-determinístico</li>
+                            <li>Dificuldade de realizar testes</li>
+                            <li>Dificuldade de reproduzir <span class="italic">bugs</span></li>
+                            <li>Sincronização baseada em <span class="italic">locks</span> e variáveis condicionais</li>
+                        </ul>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Programação Funcional</h3>
+                    <ul>
+                        <li>Ênfase em funções puras</li>
+                        <li>Evita manipulação de dados mutáveis</li>
+                        <li>Mecanismos alternativos para programação concorrente:</li>
+                        <ul>
+                            <li>Modelo de atores</li>
+                            <li>Memória transacional em software (STM)</li>
+                            <li><span class="italic">Functional reactive programming</span> (FRP)</li>
+                            <li>Paralelismo de dados</li>
+                            <li>Paralelismo semi-explícito</li>
+                        </ul>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Objetivo</h3>
+                    <ul>
+                        <li>Estudo sobre a utilização de memória transacional em software em duas linguagens funcionais: Clojure e Haskell</li>
+                        <li>Implementação de um programa de médio porte com características reais nas duas linguagens</li>
+                        <li>Levantamento das principais diferenças entre as duas implementações</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Memória Transacional em Software</h2>
+                    </section>
+
+                    <section>
+                        <h3>Ideia</h3>
+                        <ul>
+                            <li>Permite que um conjunto de operações sobre uma memória compartilhada sejam executadas de maneira atômica</li>
+                            <li>Inspirado no modelo de transações dos bancos de dados</li>
+                            <li>Torna possível a composição de operações</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Transações</h3>
+                        <ul>
+                            <li>Atendem às propriedades ACI</li>
+                            <li>A execução de uma transação tem dois resultados possíveis:</li>
+                            <ul>
+                                <li>Toda transação termina e a memória é atualizada</li>
+                                <li>A transação aborta e mantém o estado do programa inalterado</li>
+                            </ul>
+                            <li>Geralmente representada nas linguagens pelos blocos atômicos</li>
+                            <pre><code>atomic {
+    if (x != null)
+        x.bar();
+
+    y = foo();
+}</pre></code>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Problema da transferência bancária</h3>
+                        <pre class="fragment"><code>class Account {
+    private transactional int balance;
+
+    public withdraw(int aumont) {
+        this.balance -= aumont;
+    }
+    public deposit(int aumont) {
+        this.balance += aumont;
+    }
+
+    public static transfer(Account from, Account to, int aumont)
+        atomic {
+            from.withdraw(aumont);
+            to.deposit(aumont);
+        }
+    }
+}</code></pre>
+                    </section>
+
+                    <section>
+                        <h3>Aspectos de um sistema de STM</h3>
+                        <ul>
+                            <li>Controle de concorrência</li>
+                            <li>Atualização e versionamento</li>
+                            <li>Gerenciamento de contenção</li>
+                            <li>Efeitos colaterais</li>
+                        </ul>
+                    </section>
+
+
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Concorrência em Clojure</h2>
+                    </section>
+
+                    <section>
+                        <h3>future</h3>
+                        <pre><code>(println "Creating future...")
+(def future-object (future (find-primes-until 999)))
+(println "Future created.")
+(println "The result is:" @future-object)</code></pre>
+
+                    </section>
+
+                    <section>
+                        <h3>agent</h3>
+                        <pre><code>(def x (agent 0))
+(defn increment [c n] (+ c n))
+(send x increment 5)
+(send-off x read-from-db-and-update)</code></pre>
+                    </section>
+
+                    <section>
+                        <h3>Memória transacional</h3>
+                        <ul>
+                            <li>Controle de concorrência multi-versão (MVCC)</li>
+                            <li><span class="italic">Snapshop isolation</span></li>
+                            <li>Permite leituras fora da transação</li>
+                            <li>Efeitos colaterais</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Problema da transferência bancária</h3>
+                        <pre><code>(def account1 (ref 100))
+(def account2 (ref 0))
+
+(defn withdraw [account amount]
+  (alter account - amount))
+
+(defn deposit [account amount]
+  (alter account + amount))
+
+(defn transfer [from to amount]
+  (dosync
+    (withdraw from amount)
+    (deposit to amount)))
+
+(transfer account1 account2 10)</code></pre>
+                    </section>
+
+                    <section>
+                        <h3>Outras mecanismos</h3>
+                        <ul>
+                            <li>atom</li>
+                            <li>var</li>
+                            <li>Todas da biblioteca padrão de Java</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Concorrência em Haskell</h2>
+                    </section>
+
+                    <section>
+                        <h3>forkIO</h3>
+                        <pre><code>forkIO :: IO () -&gt; IO ThreadId</code></pre>
+                        <pre><code>main = do
+    forkIO (replicateM_ 100000 (putChar 'A'))
+    replicateM_ 100000 (putChar 'B')</code></pre>
+                        <pre>AAAAAAAAABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABABABABABABABABABABABABABABAB</pre>
+                    </section>
+
+                    <section>
+                        <h3>MVar</h3>
+                        <pre><code>newEmptyMVar :: IO (MVar a)
+newMVar      :: a -&gt; IO (MVar a)
+takeMVar     :: MVar a -&gt; IO a
+putMVar      :: MVar a -&gt; a -&gt; IO ()</code></pre>
+                        <pre><code class="no-highlight">main = do
+    m &lt;- newEmptyMVar
+    forkIO $ putMVar m 'x'
+    r &lt;- takeMVar m
+    print r</code></pre>
+                    </section>
+
+                    <section>
+                        <h3>Memória transacional</h3>
+                        <ul>
+                            <li>Controle de concorrência otimista</li>
+                            <li>Prôve operadores de bloqueio e escolha</li>
+                        </ul>
+                        <pre><code>newTVar   :: a -&gt; STM (TVar a)
+readTVar  :: TVar a -&gt; STM a
+writeTVar :: TVar a -&gt; a -&gt; STM ()
+retry     :: STM a
+orElse    :: STM a -&gt; STM a -&gt; STM a</code></pre>
+                    </section>
+                    <section>
+                        <h3>Problema da transferência bancária</h3>
+                        <pre><code>withdraw :: Account -&gt; Int -&gt; STM ()
+withdraw acc amount = do
+    balance &lt;- readTVar acc
+    writeTVar acc (balance - amount)
+
+deposit :: Account -&gt; Int -&gt; STM ()
+deposit acc amount = withdraw acc (- amount)
+
+transfer :: Account -&gt; Account -&gt; Int -&gt; IO ()
+transfer from to amount = atomically $ do
+    deposit to amount
+    withdraw from amount</code></pre>
+                    </section>
+
+                    <section>
+                        <h3>Outros mecanismos</h3>
+                        <ul>
+                            <li>Paralelismo semi-explícito</li>
+                            <li>Paralelismo de dados</li>
+                            <li>Cloud Haskell</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Motor de Busca Paralelo</h2>
+                    </section>
+
+                    <section>
+                        <h2>Especificação</h2>
+                    </section>
+
+                    <section>
+                        <h3>Indexação</h3>
+                        <ul>
+                            <li>Deve funcionar apenas para arquivos texto;</li>
+                            <li>Buscar arquivos recursivamente a partir de um diretório fornecido pelo usuário;</li>
+                            <li>O índice não precisa persistir em disco;</li>
+                            <li>Caracteres não-alfanuméricos são tratados como separadores;</li>
+                            <li>Diferenças entre captalização de letras e hifens são ignorados;</li>
+                            <li>O número de threads de indexação é fornecido pelo usuário;</li>
+                            <li>Um indicador de progresso para indexação deve mostrar:</li>
+                            <ul>
+                                <li>Quantidade de bytes e arquivos processados até então;</li>
+                                <li>Quantidade de palavras encontradas até então;</li>
+                                <li>Quantidade de palavras no índice.</li>
+                            </ul>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Busca</h3>
+                        <ul>
+                            <li>Consultas devem ser processadas durante a indexação;</li>
+                            <li>Não é necessário que mais de uma consulta seja processada em paralelo;</li>
+                            <li>Os seguintes tipos de consultas são permitidos:</li>
+                            <ol>
+                                <li>Consultas por passagens de texto coerentes (exemplo, "this is a text");</li>
+                                <li>Consultas com caracteres coringa no começo ou fim de uma palavra (exemplo, "hou*" ou "*pa");</li>
+                                <li>Consultas que contenham uma série de palavras representando uma operação AND (exemplo, "tree house garden");</li>
+                                <li>Consultas com exclusão de palavras (exemplo, -fruit").</li>
+                            </ol>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Saída</h3>
+                        <ul>
+                            <li>Quantidade total de arquivos que os critérios de busca são verdadeiros;</li>
+                            <li>Tempo de consulta;</li>
+                            <li>Lista dos 50 primeiros arquivos ordenados da seguinte forma:</li>
+                            <ol>
+                                <li>Decrescentemente pela quantidade de ocorrências de todos os critérios consultados;</li>
+                                <li>Lexicograficamente pelo nome do arquivo.</li>
+                            </ol>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2>Versão sequencial</h2>
+                    </section>
+
+                    <section>
+                        <h3>Índice</h3>
+                        <ul>
+                            <li>Função: prover uma estrutura que associe cada termo presente na base de documentos (o vocabulário) à suas ocorrências nos documentos indexados</li>
+                        </ul>
+                        <object data="imagens/estrutura-indice.svg" type="image/svg+xml"></object>
+                    </section>
+
+                    <section>
+                        <h3>Arquitetura</h3>
+                        <object data="imagens/arquitetura-sequencial.svg" type="image/svg+xml"></object>
+                    </section>
+
+                    <section>
+                        <h2>Versão paralela</h2>
+                    </section>
+
+                    <section>
+                        <h3>Índice</h3>
+                        <ul>
+                            <li>Para permitir o processamento de consultas durante a indexação foi necessário dividir o índice em vários subíndices</li>
+                        </ul>
+                        <img src="imagens/particionamento-indice.png" />
+                    </section>
+
+                    <section>
+                        <h3>Arquitetura</h3>
+                        <object data="imagens/arquitetura-paralelo.svg" type="image/svg+xml"></object>
+                    </section>
+
+                    <section>
+                        <h3>Diferença entre as implementações em Clojure e Haskell</h3>
+                        <ul>
+                            <li>Principal ponto de divergência: Ausência de operador de bloqueio em Clojure</li>
+                            <li>Implementação em Haskell:</li>
+                            <ul>
+                                <li>Utiliza green threads (forkIO)</li>
+                                <li>Utiliza apenas STM para compartilhar memória</li>
+                                <li>Toda comunicação entre threads é feita por meio de buffers bloqueantes</li>
+                            </ul>
+                            <li>Implementação em Clojure:</li>
+                            <ul>
+                                <li>Utiliza classe Thread de Java</li>
+                                <li>Compartilha memória por: STM, agents e BlockingQueue</li>
+                                <li>Algumas comunicações são assíncronas e não bloqueantes</li>
+                                <li>Menos operações compostas</li>
+                            </ul>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2>Resultados</h2>
+                    </section>
+
+                    <section>
+                        <h3>Configuração</h3>
+                        <ul>
+                            <li>Máquina:</li>
+                            <ul>
+                                <li>Core i7 3.4 GHz (4 núcleos físicos)</li>
+                                <li>8 GB de RAM</li>
+                                <li>Linux</li>
+                            </ul>
+                            <li>Base de documentos: 60 livros em inglês (36 mb)</li>
+                            <li>6 consultas com tamanhos distintos e ocorrências variadas</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h3>Comparação entre as versões paralelas</h3>
+                        <img src="imagens/grafico-clojure-haskell.png" />
+                    </section>
+
+                    <section>
+                        <h3>Comparação entre as versões sequenciais e paralelas</h3>
+                        <img src="imagens/grafico-sequenciais.png" />
+                    </section>
+
+                    <section>
+                        <h3>Comparação da versão Clojure com e sem otimização</h3>
+                        <img src="imagens/grafico-clojure-opt.png" />
+                    </section>
+
+                    <section>
+                        <h3>Comparação da quantidade de linhas de código</h3>
+                        <img src="imagens/grafico-loc.png" />
+                    </section>
+
+                    <section>
+                        <h3>Análise</h3>
+                        <ul>
+                            <li>As duas implementações tiveram desempenhos semelhantes</li>
+                            <li>O aumento do número de threads de indexação melhora o desempenho do sistema, porém não na mesma proprorção do aumento de recursos</li>
+                            <li>O desempenho de Clojure é fortemente afetado pela presença de informações de tipo em tempo de compilação</li>
+                            <li>O aumento da complexidade do sistema não acompanhou a melhora no desempenho</li>
+                        </ul>
+                    </section>
+                </section>
+
+                <section>
+                    <h3>Conclusões</h3>
+                    <ul>
+                        <li>As duas linguagens se mostraram aptas para programação concorrente</li>
+                        <li>Memória transacional é uma forma natural de se lidar com compartilhamento de memória</li>
+                        <li>Programação funcional e memória transacional torna concorrência mais fácil, mas ainda assim é algo complexo</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Obrigado!</h2>
+                </section>
             </div>
         </div>
 
